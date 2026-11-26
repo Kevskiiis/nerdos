@@ -10,6 +10,7 @@ const envSchema = z.object({
     const url = URL.parse(value);
     return url !== null && ['http:', 'https:'].includes(url.protocol) && url.origin === value;
   }, 'must be an HTTP(S) origin without a path or trailing slash'),
+  REDIS_URL: z.string().trim().min(1),
   DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(URL.parse(value)?.protocol ?? ''),
     'must be a PostgreSQL URL'),
 });

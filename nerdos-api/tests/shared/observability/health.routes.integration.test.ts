@@ -1,13 +1,15 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import type { Sql } from 'postgres';
+import type { Redis } from 'ioredis';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import { redisPlugin } from '../../../src/shared/cache/redis.js';
 import { databasePlugin } from '../../../src/shared/database/client.js';
 import { healthRoutes } from '../../../src/shared/observability/health.routes.js';
 import { underPressurePlugin } from '../../../src/shared/observability/under-pressure.js';
 
 const apps: FastifyInstance[] = [];
-const env = { DATABASE_URL: 'postgresql://localhost/test', APP_VERSION: '1.2.3', APP_COMMIT: 'abc1234' };
+const env = { REDIS_URL: 'redis://localhost:6379', DATABASE_URL: 'postgresql://localhost/test', APP_VERSION: '1.2.3', APP_COMMIT: 'abc1234' };
 
 function mockSql(result: Promise<unknown>) {
   const query = Object.assign(result, { cancel: vi.fn().mockResolvedValue(undefined) });
@@ -15,13 +17,18 @@ function mockSql(result: Promise<unknown>) {
   return { sql, query };
 }
 
-async function makeApp(sql: ReturnType<typeof mockSql>['sql'], timeoutMs = 1000, pressure = false) {
+function mockRedis(ping = vi.fn().mockResolvedValue('PONG')) {
+  return { status: 'ready', ping, quit: vi.fn().mockResolvedValue('OK'), disconnect: vi.fn() };
+}
+
+async function makeApp(sql: ReturnType<typeof mockSql>['sql'], timeoutMs = 1000, pressure = false, redis = mockRedis()) {
   const app = Fastify();
   apps.push(app);
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   if (pressure) await app.register(underPressurePlugin, { maxHeapUsedBytes: 1, sampleInterval: 10 });
   await app.register(databasePlugin, { env, sql: sql as unknown as Sql });
+  await app.register(redisPlugin, { env, redis: redis as unknown as Redis });
   await app.register(healthRoutes, { env, timeoutMs });
   await app.ready();
   return app;
@@ -73,6 +80,26 @@ describe('health routes', () => {
     expect(response.statusCode).toBe(503);
     expect(response.json()).toEqual({ status: 'degraded' });
     expect(query.cancel).toHaveBeenCalledOnce();
+  });
+
+  it('returns degraded when Redis fails, but liveness stays available', async () => {
+    const { sql } = mockSql(Promise.resolve([]));
+    const redis = mockRedis(vi.fn().mockRejectedValue(new Error('redis unavailable')));
+    const app = await makeApp(sql, 1000, false, redis);
+    expect((await app.inject({ url: '/health/live' })).statusCode).toBe(200);
+    expect(redis.ping).not.toHaveBeenCalled();
+    const response = await app.inject({ url: '/health/ready' });
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({ status: 'degraded' });
+  });
+
+  it('times out a stalled Redis ping', async () => {
+    const { sql } = mockSql(Promise.resolve([]));
+    const redis = mockRedis(vi.fn(() => new Promise(() => {})));
+    const app = await makeApp(sql, 20, false, redis);
+    const response = await app.inject({ url: '/health/ready' });
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({ status: 'degraded' });
   });
 
   it('closes the injected pool once on app shutdown', async () => {

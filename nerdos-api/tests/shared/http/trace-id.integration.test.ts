@@ -40,7 +40,7 @@ it('binds the trace ID to request logs and redacts secrets', async () => {
   const { createLoggerOptions } = await import('../../../src/shared/logging/logger.js');
   const lines: string[] = [];
   const stream = new Writable({ write(chunk, _encoding, callback) { lines.push(chunk.toString()); callback(); } });
-  const env = loadEnv({ NODE_ENV: 'test', DATABASE_URL: 'postgresql://localhost/test', CLIENT_ORIGIN: 'https://example.com' });
+  const env = loadEnv({ NODE_ENV: 'test', REDIS_URL: 'redis://localhost:6379', DATABASE_URL: 'postgresql://localhost/test', CLIENT_ORIGIN: 'https://example.com' });
   const loggedApp = Fastify({ logger: { ...createLoggerOptions(env), stream, serializers: { req: (value) => value } } });
   try {
     await loggedApp.register(traceIdPlugin);

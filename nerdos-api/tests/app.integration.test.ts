@@ -1,15 +1,17 @@
 import type { Sql } from 'postgres';
+import type { Redis } from 'ioredis';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { loadEnv } from '../src/shared/config/env.js';
 import { errorResponseSchema } from '../src/shared/exceptions/error-schema.js';
 
-const env = loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: 'postgresql://localhost/test', CLIENT_ORIGIN: 'https://example.com' });
+const env = loadEnv({ REDIS_URL: 'redis://localhost:6379', NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: 'postgresql://localhost/test', CLIENT_ORIGIN: 'https://example.com' });
 const query = Object.assign(Promise.resolve([]), { cancel: vi.fn().mockResolvedValue(undefined) });
 const sql = Object.assign(vi.fn(() => query), { end: vi.fn().mockResolvedValue(undefined) });
+const redis = { status: 'ready', ping: vi.fn().mockResolvedValue('PONG'), quit: vi.fn().mockResolvedValue('OK'), disconnect: vi.fn() };
 let app: Awaited<ReturnType<typeof buildApp>>;
 
-beforeAll(async () => { app = await buildApp({ env, sql: sql as unknown as Sql }); });
+beforeAll(async () => { app = await buildApp({ env, sql: sql as unknown as Sql, redis: redis as unknown as Redis }); });
 afterAll(async () => { await app.close(); });
 
 describe('buildApp', () => {
@@ -27,6 +29,7 @@ describe('buildApp', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ status: 'ok', latency_ms: expect.any(Number) });
     expect(sql).toHaveBeenCalledOnce();
+    expect(redis.ping).toHaveBeenCalledOnce();
   });
 
   it('returns the unified not-found contract', async () => {
@@ -45,6 +48,7 @@ describe('buildApp', () => {
   it('closes the application and database client cleanly', async () => {
     await app.close();
     expect(sql.end).toHaveBeenCalledOnce();
+    expect(redis.quit).toHaveBeenCalledOnce();
     expect(sql.end).toHaveBeenCalledWith({ timeout: 5 });
   });
 });

@@ -1,14 +1,14 @@
 # Nerdos API
 
-The Nerdos API is a Fastify 5 and TypeScript modular monolith. It currently provides the shared foundation for future domain modules: configuration, PostgreSQL access, health probes, request tracing, security, and a consistent error contract. Domain endpoints have not been implemented yet.
+The Nerdos API is a Fastify 5 and TypeScript modular monolith. It currently provides the shared foundation for future domain modules: configuration, PostgreSQL and Redis access, health probes, request tracing, security, and a consistent error contract. Domain endpoints have not been implemented yet.
 
 ## Prerequisites
 
 - Node.js 22 and Corepack
 - pnpm 12.23.0, as specified in `package.json`
-- A PostgreSQL database reachable through a connection URL for readiness checks
+- PostgreSQL and Redis services reachable through connection URLs for readiness checks
 
-The API uses Postgres.js over TCP and can connect to a compatible PostgreSQL service, including Neon. A database connection is not required to run the test suite.
+The API uses Postgres.js over TCP and can connect to a compatible PostgreSQL service, including Neon. External PostgreSQL and Redis connections are not required to run the test suite.
 
 ## Get started
 
@@ -21,7 +21,7 @@ pnpm install --frozen-lockfile
 cp .env.example .env
 ```
 
-Edit `.env` with your database URL and frontend origin. The application reads environment variables from the process; it does **not** automatically load `.env`. For a shell-compatible `.env` file, export its values before starting the server:
+Edit `.env` with your PostgreSQL and Redis URLs and frontend origin. The application reads environment variables from the process; it does **not** automatically load `.env`. For a shell-compatible `.env` file, export its values before starting the server:
 
 ```bash
 set -a
@@ -37,7 +37,7 @@ curl http://localhost:3000/health/live
 curl http://localhost:3000/health/ready
 ```
 
-Liveness works without a database connection. Readiness requires a working connection and returns `503` when the database is unavailable or the check times out. Interactive API documentation is available at [http://localhost:3000/docs/](http://localhost:3000/docs/) outside production; the OpenAPI document is at `/docs/json`.
+Liveness works without dependency connections. Readiness requires working PostgreSQL and Redis connections and returns `503` when either is unavailable or a check times out. Interactive API documentation is available at [http://localhost:3000/docs/](http://localhost:3000/docs/) outside production; the OpenAPI document is at `/docs/json`.
 
 ## Configuration
 
@@ -49,6 +49,7 @@ Liveness works without a database connection. Readiness requires a working conne
 | `LOG_LEVEL` | `info` | Pino log level: `fatal`, `error`, `warn`, `info`, `debug`, `trace`, or `silent`. |
 | `CLIENT_ORIGIN` | Required | Allowed HTTP(S) origin for credentialed CORS, without a path or trailing slash. |
 | `DATABASE_URL` | Required | PostgreSQL connection URL using `postgres://` or `postgresql://`. |
+| `REDIS_URL` | Required | Redis connection URL, such as `redis://localhost:6379`. |
 
 Configuration is validated at startup. Set secrets in the environment or a local, untracked `.env` file; `.env.example` contains placeholders only.
 
@@ -68,14 +69,14 @@ Run these from `nerdos-api/`:
 | `pnpm test:unit` | Run unit tests. |
 | `pnpm test:integration` | Run integration tests. |
 
-Tests use Vitest. HTTP integration tests use Fastify injection and mocked database clients; they do not need a running database or open ports. Tests under `tests/shared/` mirror the shared source directories.
+Tests use Vitest. HTTP integration tests use Fastify injection and mocked PostgreSQL and Redis clients; they do not need external services or open ports. Tests under `tests/shared/` mirror the shared source directories.
 
 ## HTTP behavior
 
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /health/live` | Reports process liveness, version, commit, uptime, and timestamp. |
-| `GET /health/ready` | Executes a timeout-bounded database check and reports `ok` or `degraded`. |
+| `GET /health/ready` | Checks PostgreSQL and Redis within a timeout and reports `ok` or `degraded`. |
 | `GET /docs/` | Serves the Swagger UI outside production. |
 | `GET /docs/json` | Serves the OpenAPI document outside production. |
 
@@ -95,7 +96,7 @@ Errors handled by the shared error handler use this JSON shape:
 }
 ```
 
-Some errors also include `meta_data`, such as field errors for validation failures. Unexpected server errors are logged and returned with a sanitized detail. The readiness probe uses its own `{ "status": "degraded" }` response when its database check fails.
+Some errors also include `meta_data`, such as field errors for validation failures. Unexpected server errors are logged and returned with a sanitized detail. The readiness probe uses its own `{ "status": "degraded" }` response when a dependency check fails.
 
 ## Project layout
 
@@ -105,6 +106,7 @@ src/
   server.ts                 # Startup and graceful shutdown
   modules/                  # Reserved for future domain modules
   shared/
+    cache/                  # Redis client and key builders
     config/                 # Environment validation and build metadata
     database/               # PostgreSQL pool
     docs/                   # OpenAPI and Swagger UI
@@ -116,7 +118,7 @@ src/
 tests/                      # Unit and HTTP integration tests
 ```
 
-Shared infrastructure must not depend on domain modules. The app factory accepts an injected SQL client for tests and closes its database client during shutdown.
+Shared infrastructure must not depend on domain modules. The app factory accepts injected PostgreSQL and Redis clients for tests and closes both during shutdown.
 
 ## Docker
 
@@ -126,10 +128,10 @@ Build the image from `nerdos-api/`, optionally supplying release metadata:
 docker build --build-arg APP_VERSION=1.0.0 --build-arg GIT_SHA="$(git rev-parse HEAD)" -t nerdos-api:local .
 ```
 
-Run it with a Docker-compatible environment file containing `CLIENT_ORIGIN` and `DATABASE_URL`:
+Run it with a Docker-compatible environment file containing `CLIENT_ORIGIN`, `DATABASE_URL`, and `REDIS_URL`:
 
 ```bash
 docker run --rm -p 3000:3000 --env-file .env nerdos-api:local
 ```
 
-The image runs as a non-root user and probes `/health/live` on port 3000. Ensure the database hostname is reachable **from the container**; `localhost` inside the container refers to the container itself. The Dockerfile sets `NODE_ENV=production`, but values supplied with `--env-file` can override it, so set `NODE_ENV=production` in the file for a production-style run. The image health check assumes port 3000.
+The image runs as a non-root user and probes `/health/live` on port 3000. Ensure the database and Redis hostnames are reachable **from the container**; `localhost` inside the container refers to the container itself. The Dockerfile sets `NODE_ENV=production`, but values supplied with `--env-file` can override it, so set `NODE_ENV=production` in the file for a production-style run. The image health check assumes port 3000.

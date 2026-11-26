@@ -33,19 +33,22 @@ export const healthRoutes: FastifyPluginAsync<HealthOptions> = async (app, { env
   app.get('/health/ready', { schema: { response: { 200: readinessSchema, 503: degradedSchema } } }, async (_request, reply) => {
     const started = performance.now();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let query: ReturnType<typeof app.sql> | undefined;
+    let queryFinished = false;
     try {
-      const query = app.sql`SELECT 1`;
+      query = app.sql`SELECT 1`;
+      const databaseCheck = Promise.resolve(query).then(() => { queryFinished = true; });
       await Promise.race([
-        query,
+        Promise.all([databaseCheck, Promise.resolve().then(() => app.redis.ping()).then((response) => {
+          if (response !== 'PONG') throw new Error('Unexpected Redis ping response');
+        })]),
         new Promise<never>((_resolve, reject) => {
-          timer = setTimeout(() => {
-            void query.cancel().catch(() => {});
-            reject(new Error('Database readiness check timed out'));
-          }, timeoutMs);
+          timer = setTimeout(() => reject(new Error('Readiness check timed out')), timeoutMs);
         }),
       ]);
       return { status: 'ok' as const, latency_ms: performance.now() - started };
     } catch {
+      if (query && !queryFinished) void query.cancel().catch(() => {});
       return reply.status(503).send({ status: 'degraded' as const });
     } finally {
       if (timer !== undefined) clearTimeout(timer);

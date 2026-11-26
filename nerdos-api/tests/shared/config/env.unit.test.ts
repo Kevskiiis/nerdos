@@ -4,6 +4,7 @@ import { buildMetadata } from '../../../src/shared/config/version.js';
 
 const required = {
   DATABASE_URL: 'postgresql://user:password@localhost:5432/nerdos',
+  REDIS_URL: 'redis://localhost:6379',
   CLIENT_ORIGIN: 'https://example.com',
 };
 
@@ -17,8 +18,9 @@ describe('loadEnv', () => {
     expect(loadEnv(required)).toMatchObject({ NODE_ENV: 'development', HOST: '0.0.0.0', PORT: 3000, LOG_LEVEL: 'info' });
   });
 
-  it('reports both missing required fields', () => {
-    expect(() => loadEnv({})).toThrow(/CLIENT_ORIGIN.*DATABASE_URL/);
+  it('reports missing required fields', () => {
+    expect(() => loadEnv({})).toThrow(/CLIENT_ORIGIN.*REDIS_URL.*DATABASE_URL/);
+    expect(() => loadEnv({ ...required, REDIS_URL: '' })).toThrow(/REDIS_URL/);
   });
 
   it.each([
