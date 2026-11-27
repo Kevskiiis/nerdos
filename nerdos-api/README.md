@@ -125,7 +125,7 @@ Shared infrastructure must not depend on domain modules. The app factory accepts
 Build the image from `nerdos-api/`, optionally supplying release metadata:
 
 ```bash
-docker build --build-arg APP_VERSION=1.0.0 --build-arg GIT_SHA="$(git rev-parse HEAD)" -t nerdos-api:local .
+docker build --build-arg APP_VERSION=0.1.0 --build-arg GIT_SHA="$(git rev-parse HEAD)" -t nerdos-api:local .
 ```
 
 Run it with a Docker-compatible environment file containing `CLIENT_ORIGIN`, `DATABASE_URL`, and `REDIS_URL`:

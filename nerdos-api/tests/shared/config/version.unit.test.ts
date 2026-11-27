@@ -11,7 +11,7 @@ describe('buildMetadata', () => {
   it('uses package metadata and local when no commit is provided', async () => {
     for (const key of metadataKeys) vi.stubEnv(key, undefined);
     const { buildMetadata } = await import('../../../src/shared/config/version.js');
-    expect(buildMetadata).toEqual({ APP_NAME: 'nerdos-api', APP_VERSION: '1.0.0', APP_COMMIT: 'local', APP_RELEASE: '1.0.0+local' });
+    expect(buildMetadata).toEqual({ APP_NAME: 'nerdos-api', APP_VERSION: '0.1.0', APP_COMMIT: 'local', APP_RELEASE: '0.1.0+local' });
     expect(Object.isFrozen(buildMetadata)).toBe(true);
   });
 
