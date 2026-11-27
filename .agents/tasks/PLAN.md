@@ -240,15 +240,14 @@ git commit -m "feat(authentication): add neon auth client adapter, session-only 
 
 ---
 
-## Sprint 13:
-**Upstream integration note:** The installed SDK maps OTP reset to a different endpoint; the adapter calls Better Auth’s `/email-otp/reset-password` endpoint directly. Automatic login after verification and automatic revocation of all sessions after OTP password reset depend on upstream Neon Auth configuration (`autoSignInAfterVerification` and `revokeSessionsOnPasswordReset`); confirm these behaviors before exposing the routes.
+## Sprint 13: Auth Service Layer (All 10 Operations)
+**Upstream integration note:** The installed SDK maps OTP reset to a different endpoint; the adapter calls Better Auth’s `/email-otp/reset-password` endpoint directly. Automatic login after verification requires upstream `autoSignInAfterVerification`; the service fails closed if no session cookie is returned. Password reset signs in with the new password and explicitly revokes all sessions; if sign-in or revocation fails, the password may already have changed and the operation reports failure.
 
- Auth Service Layer (All 10 Operations)
 
 **Goal:** Implement the isolated business logic layer for all 10 authentication operations using the `AuthClient` adapter and `mapAuthError()`.
 
 ### Tasks
-- [ ] Create `src/modules/authentication/auth.service.ts`:
+- [x] Create `src/modules/authentication/auth.service.ts`:
   - Export `createAuthService(authClient: AuthClient)` implementing:
     1. `register({ username, email, password })`: Creates unverified account via Neon's native flow and triggers verification code email. Does not return a session cookie.
     2. `verifyEmail({ email, code })`: Verifies the email OTP and returns `{ user, setCookies }` (normalized cross-site cookies) to log the user in automatically.
@@ -262,14 +261,14 @@ git commit -m "feat(authentication): add neon auth client adapter, session-only 
     10. `resetPassword({ email, code, newPassword })`: Verifies reset code, updates password, **revokes all active sessions**, and returns cookie-clearing `setCookies`.
     11. `changePassword(cookieHeader, { currentPassword, newPassword })`: Verifies current password, updates password with `revokeOtherSessions: true`, and returns success.
   - Wrap all `authClient` calls in `try/catch` routing errors through `mapAuthError()`.
-- [ ] Create unit tests:
+- [x] Create unit tests:
   - `tests/modules/authentication/auth.service.unit.test.ts`: Test all service methods with a mocked `AuthClient`, explicitly verifying:
     - Auto-login `setCookies` forwarding on `verifyEmail`.
     - Unverified account rejection (`403 EMAIL_NOT_VERIFIED`) on `login`.
     - Anti-enumeration (generic success) on `resendVerification` and `forgotPassword` when user does not exist.
     - Full session revocation on `resetPassword` and `logoutAll`, and `revokeOtherSessions: true` on `changePassword`.
     - Clean separation between `getSession` (`RequestSession`) and `getMe` (`AuthUser`).
-- [ ] Mark all Sprint 13 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 13 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash
