@@ -168,7 +168,7 @@ git commit -m "feat(shared): add shared session schema, auth env vars, and fasti
 **Goal:** Build the isolated Zod validation schemas (including the module-private `authUserSchema` and 12-char password minimum), authentication rate-limit policies, and Neon Auth error mapper inside `src/modules/authentication/`.
 
 ### Tasks
-- [ ] Create `src/modules/authentication/auth.schemas.ts`:
+- [x] Create `src/modules/authentication/auth.schemas.ts`:
   - Export module-private `authUserSchema` (`{ id: z.string().min(1), email: z.string().email(), name: z.string().nullable().optional(), emailVerified: z.boolean() }`) and `type AuthUser = z.infer<typeof authUserSchema>`.
   - Export reusable fields:
     - `emailSchema`: `z.string().trim().toLowerCase().email()`
@@ -185,12 +185,12 @@ git commit -m "feat(shared): add shared session schema, auth env vars, and fasti
     - `forgotPasswordBodySchema` (`email`) & `messageResponseSchema`
     - `resetPasswordBodySchema` (`email`, `code`, `newPassword`) & `messageResponseSchema`
     - `changePasswordBodySchema` (`currentPassword`, `newPassword`) & `messageResponseSchema`
-- [ ] Create `src/modules/authentication/auth.rate-limits.ts`:
+- [x] Create `src/modules/authentication/auth.rate-limits.ts`:
   - Use `createRateLimitPolicy` from `@shared/http/rate-limit.js` to export `AUTH_RATE_LIMITS`:
     - `bruteForce`: `{ tier: "auth-brute", max: 10, timeWindow: "1 minute", keyBy: "ip" }`
     - `emailTrigger`: `{ tier: "email-trigger", max: 10, timeWindow: "10 minutes", keyBy: "ip" }`
     - `sensitiveUserAction`: `{ tier: "auth-user-sensitive", max: 10, timeWindow: "10 minutes", keyBy: "user" }`
-- [ ] Create `src/modules/authentication/auth.errors.ts`:
+- [x] Create `src/modules/authentication/auth.errors.ts`:
   - Export `mapAuthError(error: unknown): AppError` translating Neon Auth / Better Auth error codes and statuses into canonical `AppError` instances:
     - Invalid email/password -> `401 INVALID_CREDENTIALS`
     - Unverified email -> `403 EMAIL_NOT_VERIFIED`
@@ -199,10 +199,10 @@ git commit -m "feat(shared): add shared session schema, auth env vars, and fasti
     - Missing/expired session -> `401 UNAUTHORIZED`
     - Upstream network/5xx error -> `503 SERVICE_UNAVAILABLE` (`retryable: true`)
     - Pass through existing `AppError` instances unchanged.
-- [ ] Create unit tests:
+- [x] Create unit tests:
   - `tests/modules/authentication/auth.schemas.unit.test.ts`: Verify 12-char password rejection/acceptance, email trimming/lowercasing, username length bounds, and `authUserSchema` validation.
   - `tests/modules/authentication/auth.errors.unit.test.ts`: Verify every Neon Auth error code maps to the expected `AppError` status, code, and `retryable` flag.
-- [ ] Mark all Sprint 11 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 11 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash
