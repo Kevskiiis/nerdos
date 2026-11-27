@@ -85,8 +85,8 @@ git commit -m "feat(cache): add tls-enforced fail-fast redis client, key builder
 **Goal:** Build a domain-agnostic `@fastify/rate-limit` shared module backed by `fastify.redis` with fail-closed `503` behavior, global defaults, and a reusable `createRateLimitPolicy()` factory that works for both public (`onRequest` IP) and protected (`preHandler` `request.session.userId`) routes.
 
 ### Tasks
-- [ ] Install `@fastify/rate-limit` if not already installed: `pnpm add @fastify/rate-limit`.
-- [ ] Create `src/shared/http/rate-limit.ts`:
+- [x] Install `@fastify/rate-limit` if not already installed: `pnpm add @fastify/rate-limit`.
+- [x] Create `src/shared/http/rate-limit.ts`:
   - Export `RateLimitKeyStrategy = "ip" | "user" | ((req: FastifyRequest) => string)`.
   - Export `RateLimitPolicyInput`: `{ tier: string; max: number; timeWindow: string | number; keyBy?: RateLimitKeyStrategy }`.
   - Export `createRateLimitPolicy(input: RateLimitPolicyInput): RateLimitOptions`:
@@ -102,10 +102,10 @@ git commit -m "feat(cache): add tls-enforced fail-fast redis client, key builder
     - Global default policy: `createRateLimitPolicy({ tier: "global", max: 100, timeWindow: "1 minute", keyBy: "ip" })`
     - `allowList` / exemption for `/health/live` and `/health/ready` so PaaS probes are never rate-limited
     - `errorResponseBuilder` throwing `AppError(429, "RATE_LIMITED", "Too many requests. Please try again later.")`.
-- [ ] Update `src/shared/exceptions/error-handler.ts`:
+- [x] Normalize rate-limit store failures at the Redis store boundary (the existing error handler formats the resulting `AppError`):
   - Detect Redis connection, timeout, or store errors bubbling out of `@fastify/rate-limit` (e.g., `ioredis` `ReplyError`, `Command timed out`, `Connection is closed`, `ECONNREFUSED`, `Stream isn't writeable`) and normalize them to `503 SERVICE_UNAVAILABLE` (`retryable: true`) matching `errorResponseSchema`.
-- [ ] Update `src/app.ts` to register `rateLimitPlugin` immediately after `redisPlugin`.
-- [ ] Create tests:
+- [x] Update `src/app.ts` to register `rateLimitPlugin` immediately after `redisPlugin`.
+- [x] Create tests:
   - `tests/shared/http/rate-limit.unit.test.ts`: Verify `createRateLimitPolicy` outputs `${tier}:${ip}`, `${tier}:${session.userId}` when `req.session` is present, falls back to IP when `req.session` is null, and supports custom key functions.
   - `tests/shared/http/rate-limit.integration.test.ts`:
     - Verify global default limit enforcement returns `429 RATE_LIMITED` with standard `errorResponseSchema`.
@@ -113,7 +113,7 @@ git commit -m "feat(cache): add tls-enforced fail-fast redis client, key builder
     - Verify protected route two-stage limiting via `preHandler: [mockAuth, app.rateLimit(createRateLimitPolicy({ ..., keyBy: "user" }))]` keys by `request.session.userId`.
     - Verify fail-closed behavior: when mocked `fastify.redis` throws a connection/timeout error, requests return `503 SERVICE_UNAVAILABLE` (`retryable: true`).
     - Verify `/health/live` and `/health/ready` are exempt from rate limiting.
-- [ ] Mark all Sprint 9 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 9 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash

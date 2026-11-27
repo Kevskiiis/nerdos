@@ -8,7 +8,7 @@ import { errorResponseSchema } from '../src/shared/exceptions/error-schema.js';
 const env = loadEnv({ REDIS_URL: 'rediss://user:pass@localhost:6379', NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: 'postgresql://localhost/test', CLIENT_ORIGIN: 'https://example.com' });
 const query = Object.assign(Promise.resolve([]), { cancel: vi.fn().mockResolvedValue(undefined) });
 const sql = Object.assign(vi.fn(() => query), { end: vi.fn().mockResolvedValue(undefined) });
-const redis = { on: vi.fn(), status: 'ready', ping: vi.fn().mockResolvedValue('PONG'), quit: vi.fn().mockResolvedValue('OK'), disconnect: vi.fn() };
+const redis = { defineCommand: vi.fn(), nerdosRateLimit: vi.fn((_key, _window, callback) => callback(null, [1, 60000])), on: vi.fn(), status: 'ready', ping: vi.fn().mockResolvedValue('PONG'), quit: vi.fn().mockResolvedValue('OK'), disconnect: vi.fn() };
 let app: Awaited<ReturnType<typeof buildApp>>;
 
 beforeAll(async () => { app = await buildApp({ env, sql: sql as unknown as Sql, redis: redis as unknown as Redis }); });
