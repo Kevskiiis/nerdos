@@ -5,7 +5,7 @@ import { buildApp } from '../src/app.js';
 import { loadEnv } from '../src/shared/config/env.js';
 import { errorResponseSchema } from '../src/shared/exceptions/error-schema.js';
 
-const env = loadEnv({ REDIS_URL: 'rediss://user:pass@localhost:6379', NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: 'postgresql://localhost/test', CLIENT_ORIGIN: 'https://example.com' });
+const env = loadEnv({ NEON_AUTH_BASE_URL: 'https://auth.example.com', NEON_AUTH_COOKIE_SECRET: 'test-secret-at-least-32-characters-long', REDIS_URL: 'rediss://user:pass@localhost:6379', NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: 'postgresql://localhost/test', CLIENT_ORIGIN: 'https://example.com' });
 const query = Object.assign(Promise.resolve([]), { cancel: vi.fn().mockResolvedValue(undefined) });
 const sql = Object.assign(vi.fn(() => query), { end: vi.fn().mockResolvedValue(undefined) });
 const redis = { defineCommand: vi.fn(), nerdosRateLimit: vi.fn((_key, _window, callback) => callback(null, [1, 60000])), on: vi.fn(), status: 'ready', ping: vi.fn().mockResolvedValue('PONG'), quit: vi.fn().mockResolvedValue('OK'), disconnect: vi.fn() };

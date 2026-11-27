@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadEnv } from '../../../src/shared/config/env.js';
 import { createLoggerOptions } from '../../../src/shared/logging/logger.js';
 
-const required = { REDIS_URL: 'rediss://user:pass@localhost:6379', DATABASE_URL: 'postgresql://user:password@localhost:5432/nerdos', CLIENT_ORIGIN: 'https://example.com' };
+const required = { NEON_AUTH_BASE_URL: 'https://auth.example.com', NEON_AUTH_COOKIE_SECRET: 'test-secret-at-least-32-characters-long', REDIS_URL: 'rediss://user:pass@localhost:6379', DATABASE_URL: 'postgresql://user:password@localhost:5432/nerdos', CLIENT_ORIGIN: 'https://example.com' };
 
 describe('createLoggerOptions', () => {
   it('includes release metadata and redaction paths', () => {

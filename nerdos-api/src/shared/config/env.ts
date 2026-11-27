@@ -21,6 +21,8 @@ const envSchema = z.object({
   REDIS_CA_CERT: z.string().transform((value) => value.replace(/\\n/g, '\n')).optional(),
   DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(URL.parse(value)?.protocol ?? ''),
     'must be a PostgreSQL URL'),
+  NEON_AUTH_BASE_URL: z.url(),
+  NEON_AUTH_COOKIE_SECRET: z.string().min(32),
 });
 
 /** Validates runtime configuration and combines it with immutable build metadata. */

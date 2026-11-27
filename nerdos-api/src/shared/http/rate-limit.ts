@@ -15,8 +15,7 @@ export type RateLimitPolicyInput = { tier: string; max: number; timeWindow: stri
 /** Creates a reusable rate-limit policy for public or authenticated requests. */
 export function createRateLimitPolicy({ tier, max, timeWindow, keyBy = 'ip' }: RateLimitPolicyInput): RateLimitOptions {
   return { max, timeWindow, keyGenerator: (req) => {
-    const session = (req as FastifyRequest & { session?: { userId: string } | null }).session;
-    const identifier = typeof keyBy === 'function' ? keyBy(req) : keyBy === 'user' ? session?.userId ?? req.ip : req.ip;
+    const identifier = typeof keyBy === 'function' ? keyBy(req) : keyBy === 'user' ? req.session?.userId ?? req.ip : req.ip;
     return `${tier}:${identifier}`;
   } };
 }

@@ -3,6 +3,7 @@ import { loadEnv } from '../../../src/shared/config/env.js';
 import { buildMetadata } from '../../../src/shared/config/version.js';
 
 const required = {
+  NEON_AUTH_BASE_URL: 'https://auth.example.com', NEON_AUTH_COOKIE_SECRET: 'test-secret-at-least-32-characters-long', 
   DATABASE_URL: 'postgresql://user:password@localhost:5432/nerdos',
   REDIS_URL: 'rediss://user:pass@localhost:6379',
   CLIENT_ORIGIN: 'https://example.com',
@@ -29,6 +30,14 @@ describe('loadEnv', () => {
 
   it('accepts TLS Redis credentials and normalizes a custom CA certificate', () => {
     expect(loadEnv({ ...required, REDIS_CA_CERT: 'first\\nsecond' })).toMatchObject({ REDIS_CA_CERT: 'first\nsecond' });
+  });
+
+  it('requires a valid Neon Auth URL and a cookie secret of at least 32 characters', () => {
+    expect(loadEnv({ ...required, NEON_AUTH_COOKIE_SECRET: 'x'.repeat(32) }).NEON_AUTH_COOKIE_SECRET).toHaveLength(32);
+    expect(() => loadEnv({ ...required, NEON_AUTH_BASE_URL: undefined })).toThrow(/NEON_AUTH_BASE_URL/);
+    expect(() => loadEnv({ ...required, NEON_AUTH_BASE_URL: 'not-a-url' })).toThrow(/NEON_AUTH_BASE_URL/);
+    expect(() => loadEnv({ ...required, NEON_AUTH_COOKIE_SECRET: undefined })).toThrow(/NEON_AUTH_COOKIE_SECRET/);
+    expect(() => loadEnv({ ...required, NEON_AUTH_COOKIE_SECRET: 'x'.repeat(31) })).toThrow(/NEON_AUTH_COOKIE_SECRET/);
   });
 
   it.each([

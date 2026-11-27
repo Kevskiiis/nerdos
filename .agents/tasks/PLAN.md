@@ -129,8 +129,8 @@ git commit -m "feat(http): add fail-closed redis rate limiter and reusable polic
 **Goal:** Define the minimal, domain-agnostic session schema in `src/shared/http/session.schema.ts`, wire `request.session` and `app.requireAuth` into `src/shared/types/fastify.d.ts`, and scaffold `src/modules/authentication/`.
 
 ### Tasks
-- [ ] Create directories: `mkdir -p src/modules/authentication tests/modules/authentication`.
-- [ ] Create `src/shared/http/session.schema.ts`:
+- [x] Create directories: `mkdir -p src/modules/authentication tests/modules/authentication`.
+- [x] Create `src/shared/http/session.schema.ts`:
   - Export `requestSessionSchema`:
     ```ts
     z.object({
@@ -140,19 +140,19 @@ git commit -m "feat(http): add fail-closed redis rate limiter and reusable polic
     })
     ```
   - Export `type RequestSession = z.infer<typeof requestSessionSchema>`.
-- [ ] Update `src/shared/config/env.ts` and `.env.example`:
+- [x] Update `src/shared/config/env.ts` and `.env.example`:
   - Add required `NEON_AUTH_BASE_URL` (valid URL).
   - Add required `NEON_AUTH_COOKIE_SECRET` (string, min 32 chars).
-- [ ] Update `src/shared/types/fastify.d.ts`:
+- [x] Update `src/shared/types/fastify.d.ts`:
   - Import `RequestSession` from `@shared/http/session.schema.js`.
   - Augment `FastifyRequest` with **only** `session: RequestSession | null` (do **not** add `user` or `AuthUser` here).
   - Augment `FastifyInstance` with `requireAuth: preHandlerHookHandler`.
-- [ ] Update `src/shared/exceptions/error-codes.ts`:
+- [x] Update `src/shared/exceptions/error-codes.ts`:
   - Add canonical auth error codes if not already present: `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`, `EMAIL_ALREADY_EXISTS`, `INVALID_OR_EXPIRED_CODE`.
-- [ ] Create/update tests:
+- [x] Create/update tests:
   - `tests/shared/http/session.schema.unit.test.ts`: Verify `requestSessionSchema` accepts valid session payloads and rejects missing `sessionId`, missing `userId`, or invalid `expiresAt` timestamps.
   - Update `tests/shared/config/env.unit.test.ts` to verify `NEON_AUTH_BASE_URL` and `NEON_AUTH_COOKIE_SECRET` (including min-32-char rejection).
-- [ ] Mark all Sprint 10 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 10 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash
