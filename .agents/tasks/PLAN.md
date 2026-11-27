@@ -218,18 +218,18 @@ git commit -m "feat(authentication): add zod schemas, rate-limit policies, error
 **Goal:** Wrap `@neondatabase/auth` with cross-site cookie normalization (`SameSite=None; Secure; HttpOnly`) and implement the `requireAuth` Fastify `preHandler` guard that validates and attaches only `request.session`.
 
 ### Tasks
-- [ ] Create `src/modules/authentication/auth.client.ts`:
+- [x] Create `src/modules/authentication/auth.client.ts`:
   - Define a clean `AuthClient` interface abstracting the Neon Auth operations (`signUp`, `verifyEmail`, `resendVerification`, `signIn`, `signOut`, `revokeAllSessions`, `getSession`, `getMe`, `forgotPassword`, `resetPassword`, `changePassword`).
   - Implement `createNeonAuthClient()` using `@neondatabase/auth` with `env.NEON_AUTH_BASE_URL` and `env.NEON_AUTH_COOKIE_SECRET`.
   - Export `normalizeCrossSiteCookies(setCookieHeaders: string[]): string[]` ensuring every forwarded `Set-Cookie` header enforces `SameSite=None; Secure; HttpOnly; Path=/` so separate-domain CORS requests persist session cookies reliably.
-- [ ] Create `src/modules/authentication/auth.guard.ts`:
+- [x] Create `src/modules/authentication/auth.guard.ts`:
   - Export `createRequireAuth(getSession)` returning a Fastify `preHandlerHookHandler`.
   - Extract the `cookie` header from `request.headers.cookie`, call `getSession(cookieHeader)`, validate the returned session object with `requestSessionSchema.safeParse(...)` from `@shared/http/session.schema.js`, and attach **only** `request.session` on success.
   - Throw `new AppError(401, "UNAUTHORIZED", "Authentication required.")` if the cookie is missing, invalid, or fails `requestSessionSchema` validation.
-- [ ] Create unit tests:
+- [x] Create unit tests:
   - `tests/modules/authentication/auth.client.unit.test.ts`: Verify `normalizeCrossSiteCookies` upgrades/sets `SameSite=None`, `Secure`, `HttpOnly`, and `Path=/` without duplicating attributes.
   - `tests/modules/authentication/auth.guard.unit.test.ts`: Verify `requireAuth` populates `request.session` on a valid session and throws `401 UNAUTHORIZED` when cookie is missing, session is null, or session payload fails `requestSessionSchema`.
-- [ ] Mark all Sprint 12 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 12 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash
@@ -240,7 +240,10 @@ git commit -m "feat(authentication): add neon auth client adapter, session-only 
 
 ---
 
-## Sprint 13: Auth Service Layer (All 10 Operations)
+## Sprint 13:
+**Upstream integration note:** The installed SDK maps OTP reset to a different endpoint; the adapter calls Better Auth’s `/email-otp/reset-password` endpoint directly. Automatic login after verification and automatic revocation of all sessions after OTP password reset depend on upstream Neon Auth configuration (`autoSignInAfterVerification` and `revokeSessionsOnPasswordReset`); confirm these behaviors before exposing the routes.
+
+ Auth Service Layer (All 10 Operations)
 
 **Goal:** Implement the isolated business logic layer for all 10 authentication operations using the `AuthClient` adapter and `mapAuthError()`.
 
