@@ -39,7 +39,7 @@ export function createAuthService(authClient: AuthClient) {
     try { await operation(); } catch (error) { if (!isMissingUser(error)) throw mapAuthError(error); }
   }
   return {
-    async register(input: { username: string; email: string; password: string }) {
+    async register(input: { name: string; email: string; password: string }) {
       return call(async () => {
         await authClient.signUp(input);
         await authClient.resendVerification({ email: input.email });

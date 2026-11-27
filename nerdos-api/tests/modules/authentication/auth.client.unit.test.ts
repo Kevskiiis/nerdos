@@ -19,6 +19,13 @@ describe('normalizeCrossSiteCookies', () => {
 });
 
 describe('Neon Auth adapter', () => {
+  it('sends the supplied full name to Neon signup', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ user: { id: 'u', email: 'u@example.com', name: 'First Last', emailVerified: false } }));
+    vi.stubGlobal('fetch', fetchMock);
+    await createNeonAuthClient(env).signUp({ name: 'First Last', email: 'u@example.com', password: 'long-password' });
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/sign-up/email');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ name: 'First Last', email: 'u@example.com', password: 'long-password' });
+  });
   it('forwards login cookies with cross-site attributes and maps the user', async () => {
     const headers = new Headers({ 'content-type': 'application/json' });
     headers.append('set-cookie', 'session=abc; Path=/auth; SameSite=Lax');

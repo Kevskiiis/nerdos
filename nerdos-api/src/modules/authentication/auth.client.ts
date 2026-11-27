@@ -7,7 +7,7 @@ import { authUserSchema, type AuthUser } from './auth.schemas.js';
 export type AuthResult<T> = { data: T; setCookies: string[] };
 /** Operations needed by the authentication service, independent of the upstream SDK. */
 export interface AuthClient {
-  signUp(input: { username: string; email: string; password: string }): Promise<AuthResult<unknown>>;
+  signUp(input: { name: string; email: string; password: string }): Promise<AuthResult<unknown>>;
   verifyEmail(input: { email: string; code: string }): Promise<AuthResult<{ user: AuthUser }>>;
   resendVerification(input: { email: string }): Promise<AuthResult<unknown>>;
   signIn(input: { email: string; password: string }): Promise<AuthResult<{ user: AuthUser }>>;
@@ -56,7 +56,7 @@ export function createNeonAuthClient(env: Pick<Env, 'NEON_AUTH_BASE_URL' | 'NEON
     return (await run(cookie, (server) => server.getSession({ query: { disableCookieCache: 'true' } }))).data;
   }
   return {
-    signUp: ({ username, email, password }) => run('', (server) => server.signUp.email({ name: username, email, password })),
+    signUp: ({ name, email, password }) => run('', (server) => server.signUp.email({ name, email, password })),
     verifyEmail: async ({ email, code }) => {
       const result = await run('', (server) => server.emailOtp.verifyEmail({ email, otp: code }));
       return { ...result, data: { user: authUserSchema.parse(result.data?.user) } };

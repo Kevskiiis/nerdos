@@ -12,7 +12,7 @@ const user = { id: 'u1', email: 'user@example.com', name: 'User', emailVerified:
 const token = `${NEON_AUTH_SESSION_COOKIE_NAME}=abc`;
 const userResult = { data: { user }, setCookies: [`${token}; SameSite=Lax; Path=/`] };
 const empty = { data: {}, setCookies: [] };
-const registration = { username: 'User', email: user.email, password: 'long-password-123' };
+const registration = { name: 'First Last', email: user.email, password: 'long-password-123' };
 let app: Awaited<ReturnType<typeof buildApp>>;
 let client: { [K in keyof AuthClient]: ReturnType<typeof vi.fn> };
 let counters: Map<string, number>;
@@ -31,6 +31,66 @@ const headers = { cookie: token, origin: env.CLIENT_ORIGIN };
 function cookies(response: { headers: Record<string, unknown> }): string[] { const value = response.headers['set-cookie']; return Array.isArray(value) ? value : value ? [String(value)] : []; }
 
 describe('authentication routes', () => {
+  it.each([
+    ['missing', undefined, 'Enter the verification code.'],
+    ['blank', '   ', 'Enter the verification code.'],
+    ['letters', '12ab56', 'Verification code must contain only numbers.'],
+    ['hyphen', '123-456', 'Verification code must contain only numbers.'],
+    ['short', '12345', 'Verification code must be 6 digits.'],
+    ['long', '1234567', 'Verification code must be 6 digits.'],
+  ])('returns a friendly error for a %s verification code', async (_description, code, message) => {
+    for (const path of ['verify-email', 'reset-password']) {
+      const response = await app.inject({ method: 'POST', url: `/api/v1/auth/${path}`, payload: { email: user.email, code, newPassword: 'new-password-123' } });
+      expect(response.statusCode).toBe(422);
+      expect(errorResponseSchema.parse(response.json())).toMatchObject({ code: 'VALIDATION_ERROR', meta_data: { field_errors: expect.arrayContaining([expect.objectContaining({ path: '/code', message })]) } });
+    }
+    expect(client.verifyEmail).not.toHaveBeenCalled();
+    expect(client.resetPassword).not.toHaveBeenCalled();
+  });
+  it('normalizes six-digit verification codes before calling the provider', async () => {
+    const verify = await app.inject({ method: 'POST', url: '/api/v1/auth/verify-email', payload: { email: user.email, code: ' 012345 ' } });
+    expect(verify.statusCode).toBe(200);
+    expect(client.verifyEmail).toHaveBeenCalledWith({ email: user.email, code: '012345' });
+    const reset = await app.inject({ method: 'POST', url: '/api/v1/auth/reset-password', payload: { email: user.email, code: ' 012345 ', newPassword: 'new-password-123' } });
+    expect(reset.statusCode).toBe(200);
+    expect(client.resetPassword).toHaveBeenCalledWith({ email: user.email, code: '012345', newPassword: 'new-password-123' });
+  });
+  it.each([undefined, '', '   '])('requires a name when registration receives %s', async (name) => {
+    const response = await app.inject({ method: 'POST', url: '/api/v1/auth/register', payload: { ...registration, name } });
+    expect(response.statusCode).toBe(422);
+    expect(errorResponseSchema.parse(response.json())).toMatchObject({ code: 'VALIDATION_ERROR', meta_data: { field_errors: expect.arrayContaining([expect.objectContaining({ path: '/name', message: 'Enter your name.' })]) } });
+    expect(client.signUp).not.toHaveBeenCalled();
+  });
+  it('trims and forwards a full name to registration', async () => {
+    const response = await app.inject({ method: 'POST', url: '/api/v1/auth/register', payload: { ...registration, name: '  Alex García  ' } });
+    expect(response.statusCode).toBe(201);
+    expect(client.signUp).toHaveBeenCalledWith({ ...registration, name: 'Alex García' });
+  });
+  it.each([
+    ['missing', undefined, 'Enter an email address.'],
+    ['blank', '   ', 'Enter an email address.'],
+    ['too long', `${'a'.repeat(65)}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(61)}`, 'Email address must be at most 254 characters.'],
+    ['malformed', 'not-an-email', 'Enter a valid email address.'],
+  ])('returns a friendly error for a %s email on authentication endpoints', async (_description, email, message) => {
+    const payloads = [
+      ['/register', { ...registration, email }],
+      ['/login', { email, password: registration.password }],
+      ['/forgot-password', { email }],
+    ] as const;
+    for (const [path, payload] of payloads) {
+      const response = await app.inject({ method: 'POST', url: `/api/v1/auth${path}`, payload });
+      expect(response.statusCode).toBe(422);
+      expect(errorResponseSchema.parse(response.json())).toMatchObject({ code: 'VALIDATION_ERROR', meta_data: { field_errors: expect.arrayContaining([expect.objectContaining({ path: '/email', message })]) } });
+    }
+    expect(client.signUp).not.toHaveBeenCalled();
+    expect(client.signIn).not.toHaveBeenCalled();
+    expect(client.forgotPassword).not.toHaveBeenCalled();
+  });
+  it('normalizes valid emails before passing them to authentication operations', async () => {
+    const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { email: '  User@Example.COM  ', password: registration.password } });
+    expect(response.statusCode).toBe(200);
+    expect(client.signIn).toHaveBeenCalledWith({ email: 'user@example.com', password: registration.password });
+  });
   it('validates registration, registers valid requests, and supports credentialed CORS', async () => {
     const invalid = await app.inject({ method: 'POST', url: '/api/v1/auth/register', headers, payload: { ...registration, password: 'short' } });
     expect(invalid.statusCode).toBe(422);

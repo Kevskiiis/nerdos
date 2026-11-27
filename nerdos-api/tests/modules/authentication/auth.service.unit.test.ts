@@ -27,7 +27,7 @@ beforeEach(() => {
 describe('authentication service', () => {
   it('registers without forwarding cookies and sends a verification code', async () => {
     client.signUp.mockResolvedValue({ data: {}, setCookies: cookies });
-    const register = { ...input, username: 'User' };
+    const register = { ...input, name: 'First Last' };
     expect(await service.register(register)).toEqual({ message: expect.any(String) });
     expect(client.signUp).toHaveBeenCalledWith(register);
     expect(client.resendVerification).toHaveBeenCalledWith({ email: user.email });

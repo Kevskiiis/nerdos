@@ -26,7 +26,7 @@ describe('authentication schemas', () => {
   it('normalizes email, username and one-time codes', () => {
     expect(emailSchema.parse('  USER@Example.COM  ')).toBe('user@example.com');
     expect(usernameSchema.parse('  user  ')).toBe('user');
-    expect(otpCodeSchema.parse('  1234  ')).toBe('1234');
+    expect(otpCodeSchema.parse('  123456  ')).toBe('123456');
     expect(emailSchema.safeParse('invalid').success).toBe(false);
     expect(usernameSchema.safeParse('ab').success).toBe(false);
     expect(usernameSchema.safeParse('x'.repeat(33)).success).toBe(false);
@@ -40,8 +40,8 @@ describe('authentication schemas', () => {
     expect(authUserSchema.safeParse({ ...user, emailVerified: undefined }).success).toBe(false);
   });
   it('applies field rules in request and response schemas', () => {
-    expect(registerBodySchema.parse({ username: ' user ', email: ' U@EXAMPLE.COM ', password: 'x'.repeat(12) })).toMatchObject({ username: 'user', email: 'u@example.com' });
-    expect(resetPasswordBodySchema.safeParse({ email: 'u@example.com', code: '1234', newPassword: 'short' }).success).toBe(false);
+    expect(registerBodySchema.parse({ name: ' First Last ', email: ' U@EXAMPLE.COM ', password: 'x'.repeat(12) })).toMatchObject({ name: 'First Last', email: 'u@example.com' });
+    expect(resetPasswordBodySchema.safeParse({ email: 'u@example.com', code: '123456', newPassword: 'short' }).success).toBe(false);
     expect(changePasswordBodySchema.safeParse({ currentPassword: 'x'.repeat(12), newPassword: 'y'.repeat(12) }).success).toBe(true);
     expect(messageResponseSchema.safeParse({ message: 'Done' }).success).toBe(true);
   });
