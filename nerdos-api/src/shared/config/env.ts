@@ -10,7 +10,15 @@ const envSchema = z.object({
     const url = URL.parse(value);
     return url !== null && ['http:', 'https:'].includes(url.protocol) && url.origin === value;
   }, 'must be an HTTP(S) origin without a path or trailing slash'),
-  REDIS_URL: z.string().trim().min(1),
+  REDIS_URL: z.string().trim().refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'rediss:' && Boolean(url.username) && Boolean(url.password);
+    } catch {
+      return false;
+    }
+  }, 'must be a TLS Redis URL with username and password'),
+  REDIS_CA_CERT: z.string().transform((value) => value.replace(/\\n/g, '\n')).optional(),
   DATABASE_URL: z.url().refine((value) => ['postgres:', 'postgresql:'].includes(URL.parse(value)?.protocol ?? ''),
     'must be a PostgreSQL URL'),
 });

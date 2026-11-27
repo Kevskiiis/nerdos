@@ -17,7 +17,7 @@ const livenessSchema = z.object({
 const readinessSchema = z.object({ status: z.literal('ok'), latency_ms: z.number().nonnegative() });
 const degradedSchema = z.object({ status: z.literal('degraded') });
 
-/** Registers liveness and timeout-bounded database readiness probes. */
+/** Registers dependency-free liveness and timeout-bounded database and Redis readiness probes. */
 export const healthRoutes: FastifyPluginAsync<HealthOptions> = async (app, { env, timeoutMs = 1000 }) => {
   app.get('/health/live', {
     schema: { response: { 200: livenessSchema } },

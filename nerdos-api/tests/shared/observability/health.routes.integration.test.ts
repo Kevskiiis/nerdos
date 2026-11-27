@@ -9,7 +9,7 @@ import { healthRoutes } from '../../../src/shared/observability/health.routes.js
 import { underPressurePlugin } from '../../../src/shared/observability/under-pressure.js';
 
 const apps: FastifyInstance[] = [];
-const env = { REDIS_URL: 'redis://localhost:6379', DATABASE_URL: 'postgresql://localhost/test', APP_VERSION: '1.2.3', APP_COMMIT: 'abc1234' };
+const env = { NODE_ENV: 'test' as const, REDIS_URL: 'redis://localhost:6379', DATABASE_URL: 'postgresql://localhost/test', APP_VERSION: '1.2.3', APP_COMMIT: 'abc1234' };
 
 function mockSql(result: Promise<unknown>) {
   const query = Object.assign(result, { cancel: vi.fn().mockResolvedValue(undefined) });
@@ -18,7 +18,7 @@ function mockSql(result: Promise<unknown>) {
 }
 
 function mockRedis(ping = vi.fn().mockResolvedValue('PONG')) {
-  return { status: 'ready', ping, quit: vi.fn().mockResolvedValue('OK'), disconnect: vi.fn() };
+  return { on: vi.fn(), status: 'ready', ping, quit: vi.fn().mockResolvedValue('OK'), disconnect: vi.fn() };
 }
 
 async function makeApp(sql: ReturnType<typeof mockSql>['sql'], timeoutMs = 1000, pressure = false, redis = mockRedis()) {

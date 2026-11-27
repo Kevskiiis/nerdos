@@ -4,7 +4,7 @@ import { buildMetadata } from '../../../src/shared/config/version.js';
 
 const required = {
   DATABASE_URL: 'postgresql://user:password@localhost:5432/nerdos',
-  REDIS_URL: 'redis://localhost:6379',
+  REDIS_URL: 'rediss://user:pass@localhost:6379',
   CLIENT_ORIGIN: 'https://example.com',
 };
 
@@ -21,6 +21,14 @@ describe('loadEnv', () => {
   it('reports missing required fields', () => {
     expect(() => loadEnv({})).toThrow(/CLIENT_ORIGIN.*REDIS_URL.*DATABASE_URL/);
     expect(() => loadEnv({ ...required, REDIS_URL: '' })).toThrow(/REDIS_URL/);
+  });
+
+  it.each(['redis://user:pass@host:6379', 'rediss://:pass@host:6379', 'rediss://user@host:6379', 'invalid'])('rejects insecure Redis URL %s', (url) => {
+    expect(() => loadEnv({ ...required, REDIS_URL: url })).toThrow(/REDIS_URL/);
+  });
+
+  it('accepts TLS Redis credentials and normalizes a custom CA certificate', () => {
+    expect(loadEnv({ ...required, REDIS_CA_CERT: 'first\\nsecond' })).toMatchObject({ REDIS_CA_CERT: 'first\nsecond' });
   });
 
   it.each([
