@@ -1,12 +1,13 @@
 # Nerdos API
 
-The Nerdos API is a Fastify 5 and TypeScript modular monolith. It currently provides the shared foundation for future domain modules: configuration, PostgreSQL and Redis access, health probes, request tracing, security, and a consistent error contract. Domain endpoints have not been implemented yet.
+The Nerdos API is a Fastify 5 and TypeScript modular monolith. It provides authentication through Neon Auth and shared infrastructure for configuration, PostgreSQL and Redis access, health probes, request tracing, security, and a consistent error contract.
 
 ## Prerequisites
 
 - Node.js 22 and Corepack
 - pnpm 12.23.0, as specified in `package.json`
-- PostgreSQL and Redis services reachable through connection URLs for readiness checks
+- PostgreSQL and TLS-enabled Redis services reachable through connection URLs
+- A Neon Auth service and a cookie secret of at least 32 characters
 
 The API uses Postgres.js over TCP and can connect to a compatible PostgreSQL service, including Neon. External PostgreSQL and Redis connections are not required to run the test suite.
 
@@ -21,7 +22,7 @@ pnpm install --frozen-lockfile
 cp .env.example .env
 ```
 
-Edit `.env` with your PostgreSQL and Redis URLs and frontend origin. The application reads environment variables from the process; it does **not** automatically load `.env`. For a shell-compatible `.env` file, export its values before starting the server:
+Edit `.env` with your frontend origin, PostgreSQL and Redis URLs, Neon Auth URL, and cookie secret. The example values are placeholders. The application reads environment variables from the process; it does **not** automatically load `.env`. For a shell-compatible `.env` file, export its values before starting the server:
 
 ```bash
 set -a
@@ -49,7 +50,10 @@ Liveness works without dependency connections. Readiness requires working Postgr
 | `LOG_LEVEL` | `info` | Pino log level: `fatal`, `error`, `warn`, `info`, `debug`, `trace`, or `silent`. |
 | `CLIENT_ORIGIN` | Required | Allowed HTTP(S) origin for credentialed CORS, without a path or trailing slash. |
 | `DATABASE_URL` | Required | PostgreSQL connection URL using `postgres://` or `postgresql://`. |
-| `REDIS_URL` | Required | Redis connection URL, such as `redis://localhost:6379`. |
+| `REDIS_URL` | Required | TLS Redis URL (`rediss://`) with a username and password. |
+| `REDIS_CA_CERT` | None | Optional PEM CA certificate for Redis; represent line breaks as `\n`. |
+| `NEON_AUTH_BASE_URL` | Required | Neon Auth service URL. |
+| `NEON_AUTH_COOKIE_SECRET` | Required | Secret used to sign session cookies; at least 32 characters. |
 
 Configuration is validated at startup. Set secrets in the environment or a local, untracked `.env` file; `.env.example` contains placeholders only.
 
@@ -69,7 +73,7 @@ Run these from `nerdos-api/`:
 | `pnpm test:unit` | Run unit tests. |
 | `pnpm test:integration` | Run integration tests. |
 
-Tests use Vitest. HTTP integration tests use Fastify injection and mocked PostgreSQL and Redis clients; they do not need external services or open ports. Tests under `tests/shared/` mirror the shared source directories.
+Tests use Vitest. HTTP integration tests use Fastify injection and mocked PostgreSQL, Redis, and authentication clients; they do not need external services or open ports. Tests under `tests/shared/` mirror the shared source directories.
 
 ## HTTP behavior
 
@@ -79,6 +83,23 @@ Tests use Vitest. HTTP integration tests use Fastify injection and mocked Postgr
 | `GET /health/ready` | Checks PostgreSQL and Redis within a timeout and reports `ok` or `degraded`. |
 | `GET /docs/` | Serves the Swagger UI outside production. |
 | `GET /docs/json` | Serves the OpenAPI document outside production. |
+
+Authentication routes are mounted under `/api/v1/auth`:
+
+| Method and path | Purpose |
+| --- | --- |
+| `POST /register` | Register an account. |
+| `POST /resend-verification` | Request another verification email. |
+| `POST /forgot-password` | Request a password reset email. |
+| `POST /login` | Sign in and receive session cookies. |
+| `POST /verify-email` | Verify an email address. |
+| `POST /reset-password` | Reset a password. |
+| `GET /me` | Get the current user; requires a session. |
+| `POST /logout` | End the current session; requires a session. |
+| `POST /change-password` | Change the password; requires a session. |
+| `POST /logout-all` | End all sessions; requires a session. |
+
+Use the interactive documentation for request and response schemas. Authentication routes have rate limits; browser clients must send credentials to use session cookies.
 
 Requests may supply an `x-trace-id` header; otherwise the API generates one. Responses include `x-trace-id` and `x-app-version`. Request logs include the trace ID, and configured sensitive fields are redacted. Security headers and credentialed CORS are enabled. The service sheds requests under high event-loop delay or heap usage; liveness remains available during load shedding.
 
@@ -104,7 +125,7 @@ Some errors also include `meta_data`, such as field errors for validation failur
 src/
   app.ts                    # App factory and plugin registration
   server.ts                 # Startup and graceful shutdown
-  modules/                  # Reserved for future domain modules
+  modules/authentication/   # Neon Auth adapter, service, guard, and routes
   shared/
     cache/                  # Redis client and key builders
     config/                 # Environment validation and build metadata
@@ -118,7 +139,7 @@ src/
 tests/                      # Unit and HTTP integration tests
 ```
 
-Shared infrastructure must not depend on domain modules. The app factory accepts injected PostgreSQL and Redis clients for tests and closes both during shutdown.
+Shared infrastructure must not depend on domain modules. The app factory accepts injected PostgreSQL, Redis, and authentication clients for tests and closes the database and Redis clients during shutdown.
 
 ## Docker
 
@@ -128,7 +149,7 @@ Build the image from `nerdos-api/`, optionally supplying release metadata:
 docker build --build-arg APP_VERSION=0.1.0 --build-arg GIT_SHA="$(git rev-parse HEAD)" -t nerdos-api:local .
 ```
 
-Run it with a Docker-compatible environment file containing `CLIENT_ORIGIN`, `DATABASE_URL`, and `REDIS_URL`:
+Run it with a Docker-compatible environment file containing `CLIENT_ORIGIN`, `DATABASE_URL`, `REDIS_URL`, `NEON_AUTH_BASE_URL`, and `NEON_AUTH_COOKIE_SECRET`:
 
 ```bash
 docker run --rm -p 3000:3000 --env-file .env nerdos-api:local
