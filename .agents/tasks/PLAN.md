@@ -284,7 +284,7 @@ git commit -m "feat(authentication): implement auth service for all 10 operation
 **Goal:** Expose all 10 typed `/api/v1/auth/*` endpoints with public (`onRequest` IP) and protected (`preHandler` `request.session.userId`) rate limiting, register the plugin in `src/app.ts`, and verify end-to-end HTTP, CORS, and cookie behavior.
 
 ### Tasks
-- [ ] Create `src/modules/authentication/auth.routes.ts`:
+- [x] Create `src/modules/authentication/auth.routes.ts`:
   - Register all 10 routes under `/api/v1/auth` with Zod request/response schemas and OpenAPI tags (`["Authentication"]`):
     - **Public — Email-Trigger Tier (`config: { rateLimit: AUTH_RATE_LIMITS.emailTrigger }`):**
       - `POST /register` (`201`)
@@ -300,13 +300,13 @@ git commit -m "feat(authentication): implement auth service for all 10 operation
     - **Protected — Two-Stage Per-User Limit (`preHandler: [app.requireAuth, app.rateLimit(AUTH_RATE_LIMITS.sensitiveUserAction)]`):**
       - `POST /change-password` (`200`)
       - `POST /logout-all` (`200`, forwards cookie-clearing `Set-Cookie`)
-- [ ] Create `src/modules/authentication/auth.plugin.ts`:
+- [x] Create `src/modules/authentication/auth.plugin.ts`:
   - Export `authenticationPlugin` (`fastify-plugin` / `fp`) accepting optional `{ authClient?: AuthClient }` for testing.
   - Decorate **only** `request.session = null` and `app.requireAuth = createRequireAuth(authService.getSession)` (no `request.user`).
   - Register `authRoutes` with prefix `"/api/v1/auth"`.
-- [ ] Update `src/app.ts`:
+- [x] Update `src/app.ts`:
   - Register `authenticationPlugin` after `rateLimitPlugin` and `databasePlugin`.
-- [ ] Create integration tests:
+- [x] Create integration tests:
   - `tests/modules/authentication/auth.routes.integration.test.ts`:
     - Verify `POST /api/v1/auth/register` rejects passwords under 12 chars with `422 VALIDATION_ERROR` and succeeds (`201`) with valid input.
     - Verify `POST /api/v1/auth/verify-email` returns `200` and sets cross-site `Set-Cookie` (`SameSite=None; Secure; HttpOnly`).
@@ -314,7 +314,7 @@ git commit -m "feat(authentication): implement auth service for all 10 operation
     - Verify `POST /api/v1/auth/reset-password`, `POST /api/v1/auth/change-password`, and `POST /api/v1/auth/logout-all` trigger session revocation and appropriate `Set-Cookie` clearing.
     - Verify two-stage rate limiting on `POST /api/v1/auth/change-password` (keys by `request.session.userId` after `requireAuth`).
     - Verify CORS headers (`Access-Control-Allow-Origin: CLIENT_ORIGIN`, `Access-Control-Allow-Credentials: true`) on auth routes.
-- [ ] Mark all Sprint 14 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 14 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash

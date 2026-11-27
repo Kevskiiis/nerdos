@@ -2,6 +2,8 @@ import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { Sql } from 'postgres';
 import type { Redis } from 'ioredis';
+import { authenticationPlugin } from './modules/authentication/auth.plugin.js';
+import type { AuthClient } from './modules/authentication/auth.client.js';
 import { redisPlugin } from './shared/cache/redis.js';
 import { loadEnv, type Env } from './shared/config/env.js';
 import { databasePlugin } from './shared/database/client.js';
@@ -18,6 +20,7 @@ interface BuildAppOptions {
   env?: Env;
   sql?: Sql;
   redis?: Redis;
+  authClient?: AuthClient;
 }
 
 /** Builds the configured API, optionally accepting a validated environment and database client. */
@@ -37,6 +40,7 @@ export async function buildApp(options: BuildAppOptions = {}) {
     await app.register(redisPlugin, { env, redis: options.redis });
     await app.register(rateLimitPlugin, { env });
     registerErrorHandlers(app);
+    await app.register(authenticationPlugin, { env, authClient: options.authClient });
     await app.register(healthRoutes, { env });
     await app.ready();
     return app;

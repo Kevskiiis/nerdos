@@ -72,7 +72,7 @@ export function createAuthService(authClient: AuthClient) {
       return call(async () => { await authClient.revokeAllSessions(cookieHeader); return { message: 'Signed out of all sessions.', setCookies: clearCookies() }; });
     },
     async getSession(cookieHeader: string) {
-      return call(async () => { const session = await authClient.getSession(cookieHeader); return session === null ? null : requestSessionSchema.parse(session); });
+      return call(async () => { const session = requestSessionSchema.safeParse(await authClient.getSession(cookieHeader)); return session.success ? session.data : null; });
     },
     async getMe(cookieHeader: string) {
       return call(async () => { const user = await authClient.getMe(cookieHeader); return user === null ? null : authUserSchema.parse(user); });
