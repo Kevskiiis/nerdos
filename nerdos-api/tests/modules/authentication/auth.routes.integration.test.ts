@@ -34,13 +34,44 @@ describe('authentication routes', () => {
   it('validates registration, registers valid requests, and supports credentialed CORS', async () => {
     const invalid = await app.inject({ method: 'POST', url: '/api/v1/auth/register', headers, payload: { ...registration, password: 'short' } });
     expect(invalid.statusCode).toBe(422);
-    expect(errorResponseSchema.parse(invalid.json()).code).toBe('VALIDATION_ERROR');
+    expect(errorResponseSchema.parse(invalid.json())).toMatchObject({ code: 'VALIDATION_ERROR', meta_data: { field_errors: [{ path: '/password', message: 'Password must be at least 12 characters.' }] } });
     const valid = await app.inject({ method: 'POST', url: '/api/v1/auth/register', headers, payload: registration });
     expect(valid.statusCode).toBe(201);
     expect(valid.json()).toEqual({ message: expect.any(String) });
     expect(valid.headers['access-control-allow-origin']).toBe(env.CLIENT_ORIGIN);
     expect(valid.headers['access-control-allow-credentials']).toBe('true');
     expect(client.signUp).toHaveBeenCalledWith(registration);
+  });
+  it.each([
+    ['too short', 'x'.repeat(11), 'Password must be at least 12 characters.'],
+    ['too long', 'x'.repeat(129), 'Password must be at most 128 characters.'],
+    ['blank', ' '.repeat(12), 'Password cannot be blank.'],
+    ['control character', 'password1234\n', 'Password may only contain letters, numbers, spaces, and standard special characters.'],
+    ['emoji', 'password1234🔥', 'Password may only contain letters, numbers, spaces, and standard special characters.'],
+    ['non-ASCII', 'pássword1234', 'Password may only contain letters, numbers, spaces, and standard special characters.'],
+  ])('rejects a %s new password on all three routes before password operations', async (_description, password, message) => {
+    for (const [path, payload, field] of [
+      ['register', { ...registration, password }, '/password'],
+      ['reset-password', { email: user.email, code: '123456', newPassword: password }, '/newPassword'],
+      ['change-password', { currentPassword: 'legacy8', newPassword: password }, '/newPassword'],
+    ] as const) {
+      const response = await app.inject({ method: 'POST', url: `/api/v1/auth/${path}`, headers, payload });
+      expect(response.statusCode).toBe(422);
+      expect(errorResponseSchema.parse(response.json())).toMatchObject({ code: 'VALIDATION_ERROR', meta_data: { field_errors: expect.arrayContaining([expect.objectContaining({ path: field, message })]) } });
+    }
+    expect(client.signUp).not.toHaveBeenCalled();
+    expect(client.resetPassword).not.toHaveBeenCalled();
+    expect(client.changePassword).not.toHaveBeenCalled();
+    expect(client.signIn).not.toHaveBeenCalled();
+  });
+  it('allows legacy passwords on login and rejects identical password changes', async () => {
+    const login = await app.inject({ method: 'POST', url: '/api/v1/auth/login', payload: { email: user.email, password: 'short8ch' } });
+    expect(login.statusCode).toBe(200);
+    expect(client.signIn).toHaveBeenCalledWith({ email: user.email, password: 'short8ch' });
+    const response = await app.inject({ method: 'POST', url: '/api/v1/auth/change-password', headers, payload: { currentPassword: 'same-password', newPassword: 'same-password' } });
+    expect(response.statusCode).toBe(422);
+    expect(errorResponseSchema.parse(response.json())).toMatchObject({ code: 'VALIDATION_ERROR', meta_data: { field_errors: expect.arrayContaining([expect.objectContaining({ path: '/newPassword', message: 'New password must be different from current password.' })]) } });
+    expect(client.changePassword).not.toHaveBeenCalled();
   });
   it('verifies email and logs in with normalized cross-site cookies', async () => {
     for (const [path, payload] of [['verify-email', { email: user.email, code: '123456' }], ['login', { email: user.email, password: registration.password }]] as const) {
