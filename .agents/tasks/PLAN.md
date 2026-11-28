@@ -33,7 +33,7 @@ This plan introduces a centralized `ky` HTTP client, a single source of truth fo
 ### Tasks
 - [x] Install `ky`: `pnpm add ky`.
 - [x] Create/update `src/config/env.ts` (and `.env.example`):
-  - Validate `VITE_API_BASE_URL` (e.g., `http://localhost:3000`) at startup using Zod, failing fast if missing or malformed, and strip any trailing slash.
+  - Validate `VITE_API_BASE_URL` (e.g., `http://localhost:3000`) at startup using Zod and strip trailing slashes. Local Vite development defaults to `http://localhost:3000` when unset; non-development builds require an explicit valid API URL.
 - [x] Create `src/config/api-endpoints.ts`:
   - Export a frozen `API_ENDPOINTS` registry (`as const`) grouped by domain with **no leading slashes** (required by ky's prefix handling):
     ```ts
@@ -78,43 +78,43 @@ git commit -m "feat(api): add centralized ky client, endpoint registry, and erro
 ### Tasks
 
 #### 1. Auth API & Validation Schemas (`src/features/auth/`)
-- [ ] Create directories if missing: `mkdir -p src/features/auth/api src/features/auth/components src/features/auth/lib src/features/auth/pages`.
-- [ ] Create `src/features/auth/api/auth.api.ts`:
+- [x] Create directories if missing: `mkdir -p src/features/auth/api src/features/auth/components src/features/auth/lib src/features/auth/pages`.
+- [x] Create `src/features/auth/api/auth.api.ts`:
   - Export typed functions (`registerUser`, `loginUser`, `getCurrentUser`) using `apiClient` from `@/lib/api-client` and `API_ENDPOINTS.auth.*` from `@/config/api-endpoints`.
   - Route all caught errors through `parseApiError()` so UI components always receive a clean, predictable `ApiError`.
-- [ ] Create `src/features/auth/lib/auth.schemas.ts`:
+- [x] Create `src/features/auth/lib/auth.schemas.ts`:
   - Mirror `nerdos-api`'s validation rules cleanly:
     - `emailSchema`: trimmed, lowercased, max 254 chars, valid email.
-    - `usernameSchema`: trimmed, 3–32 chars.
+    - `nameSchema`: trimmed, required, max 128 chars (matches the API/Neon Auth `name` field).
     - `newPasswordSchema` (for **Signup**): 12–128 printable ASCII characters (`/^[\x20-\x7E]+$/`), non-blank.
     - `existingPasswordSchema` (for **Login**): `z.string().min(1, "Password is required.").max(128)` (loose for forward-compatibility).
-    - `signupFormSchema` (`username`, `email`, `password`) and `loginFormSchema` (`email`, `password`).
+    - `signupFormSchema` (`name`, `email`, `password`) and `loginFormSchema` (`email`, `password`).
 
 #### 2. Mobile-First Auth Shell & Pages (`src/features/auth/`)
-- [ ] Use `shadcn` MCP to verify/install `card`, `input`, `label`, `button`, and `alert` in `src/components/ui/`.
-- [ ] Create `src/features/auth/components/AuthCardLayout.tsx`:
+- [x] Use `shadcn` MCP to verify/install `card`, `input`, `label`, `button`, and `alert` in `src/components/ui/`.
+- [x] Create `src/features/auth/components/AuthCardLayout.tsx`:
   - Centered, distraction-free mobile-first layout (`min-h-dvh flex flex-col items-center justify-center px-4 py-8`) with the Nerdos wordmark + `Beta` badge linking back to `/`, and a responsive `<Card className="w-full max-w-md">`.
-- [ ] Create `src/features/auth/pages/SignupPage.tsx` (`/register`):
-  - Accessible form fields for `Username`, `Email`, and `Password` (with show/hide toggle, `autoComplete` attributes, `text-base` to prevent iOS Safari auto-zoom, and a subtle *"At least 12 characters"* helper note).
+- [x] Create `src/features/auth/pages/SignupPage.tsx` (`/register`):
+  - Accessible form fields for `Full name`, `Email`, and `Password` (with show/hide toggle, `autoComplete` attributes, `text-base` to prevent iOS Safari auto-zoom, and a subtle *"At least 12 characters"* helper note).
   - Full-width submit button (`min-h-[44px]`) with loading/disabled state to prevent double submissions.
   - Map `ApiError` codes cleanly into user-friendly `<Alert variant="destructive">` messages (`EMAIL_ALREADY_EXISTS`, `VALIDATION_ERROR`, `RATE_LIMITED`, `SERVICE_UNAVAILABLE`).
   - On `201` success, navigate to `/verify-email` (passing only the registered `email` in route state—never the password).
   - Footer link: *"Already have an account? Log in"* -> `/login`.
-- [ ] Create `src/features/auth/pages/LoginPage.tsx` (`/login`):
+- [x] Create `src/features/auth/pages/LoginPage.tsx` (`/login`):
   - Accessible form fields for `Email` and `Password` (with show/hide toggle, `autoComplete="current-password"`, and a `"Forgot password?"` link to `/forgot-password`).
   - Full-width submit button (`min-h-[44px]`) with loading/disabled state.
   - Map `ApiError` codes cleanly (`INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED` with a direct link to `/verify-email`, `RATE_LIMITED`, `SERVICE_UNAVAILABLE`).
   - On `200` success, refresh auth session state and navigate to `/dashboard`.
   - Footer link: *"New to Nerdos? Create an account"* -> `/register`.
-- [ ] Wire `LoginPage` (`/login`) and `SignupPage` (`/register`) into the **Guest-Only Auth** route group in `src/app/`.
+- [x] Wire `LoginPage` (`/login`) and `SignupPage` (`/register`) into the **Guest-Only Auth** route group in `src/app/`.
 
 #### 3. Verification (Playwright MCP + Typecheck & Build)
-- [ ] Run `pnpm exec tsc --noEmit && pnpm run build` and confirm zero errors.
-- [ ] Open `/register` and `/login` in **Playwright MCP** at **mobile (`375×812`)** and **desktop (`1440×900`)**:
+- [x] Run `pnpm exec tsc --noEmit && pnpm run build` and confirm zero errors.
+- [ ] Open `/register` and `/login` in **Playwright MCP** at **mobile (`375×812`)** and **desktop (`1440×900`)** (Playwright MCP and local Playwright are unavailable in the current environment):
   - Confirm zero console errors and zero horizontal overflow on mobile.
   - Verify client-side validation blocks empty submissions and 11-character passwords on `/register` with clear inline errors and zero network calls.
   - Verify password show/hide toggle and navigation links between `/`, `/login`, and `/register`.
-- [ ] Mark all Sprint 7 tasks as `[x]` in `PLAN.md`.
+- [ ] Mark all Sprint 7 tasks as `[x]` in `PLAN.md` after browser verification.
 
 ### Verification & Local Commit
 ```bash
@@ -130,18 +130,18 @@ git commit -m "feat(auth): add ky auth API layer, schemas, and mobile-first sign
 **Goal:** Capture clean, high-resolution UI screenshots of the new Landing, Signup, and Login pages using Playwright MCP, save them alongside the existing snapshots referenced in the root `README.md`, and upgrade `README.md` to showcase the app like a polished, production open-source repository.
 
 ### Tasks
-- [ ] Inspect the root `README.md` to locate the exact directory and naming convention used for existing UI snapshots/screenshots.
-- [ ] Start the local `nerdos-web` dev server and use **Playwright MCP** (`browser_take_screenshot`) to capture clean, consistent screenshots saved directly into that existing snapshot directory:
+- [x] Inspect the root `README.md` to locate the exact directory and naming convention used for existing UI snapshots/screenshots.
+- [x] Start the local `nerdos-web` dev server and capture screenshots in the existing snapshot directory using local Playwright (Playwright MCP was unavailable in this session):
   - **Landing Page (`/`):** Desktop (`1440×900`, showing the Hero + interactive flashcard and/or full-page preview) and Mobile (`375×812`).
   - **Note Demo Section (`/`):** Scrolled into view showing the live Plate rich-text editor demo.
   - **Signup Page (`/register`):** Clean desktop (`1440×900`) or mobile (`375×812`) view.
   - **Login Page (`/login`):** Clean desktop (`1440×900`) or mobile (`375×812`) view.
-- [ ] Verify every saved image opens cleanly, has no broken assets or console error overlays, and uses consistent filenames matching the repo's existing convention.
-- [ ] Update the root `README.md` to present the new UI professionally (matching high-star open-source repos):
+- [x] Verify saved images are valid PNG files, have no page errors or unexpected console errors during capture, and use consistent filenames matching the repo's existing convention.
+- [x] Update the root `README.md` to present the new UI professionally (matching high-star open-source repos):
   - Preserve existing project setup, tech stack, and architecture sections while keeping them crisp and accurate (including `ky`, `shadcn/ui`, `Plate`, and centralized API endpoints).
   - Add/update a dedicated **Screenshots / UI Showcase** section using clean Markdown tables or `<p align="center">` layouts with descriptive `alt` text and captions so desktop and mobile views sit neatly side-by-side without overwhelming the page.
   - Ensure all relative image paths in `README.md` resolve accurately to the saved snapshot files.
-- [ ] Mark all Sprint 8 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 8 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash

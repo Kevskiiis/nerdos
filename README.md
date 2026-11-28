@@ -4,7 +4,19 @@ A unified, mobile-first study workspace that combines rich-text note-taking with
 
 > **Project status:** Foundational architecture and MVP UI are in active development (`v0.1.0`).
 
-## Product Preview
+## Screenshots
+
+| Landing page — desktop | Landing page — mobile |
+| :---: | :---: |
+| ![Nerdos landing page on desktop](docs/images/landing_desktop_mvp.png) | ![Nerdos landing page on mobile](docs/images/landing_mobile_mvp.png) |
+
+| Create an account | Log in |
+| :---: | :---: |
+| ![Nerdos signup page](docs/images/signup_desktop_mvp.png) | ![Nerdos login page](docs/images/login_desktop_mvp.png) |
+
+![Interactive Plate note editor on the landing page](docs/images/note_demo_mvp.png)
+
+### Study workspace
 
 | Dashboard | Unified Library |
 | :---: | :---: |
@@ -27,7 +39,7 @@ Students frequently split their study workflow across disconnected note editors 
 - **Active recall:** standard flip and typed-answer modes with FSRS interval previews
 - **Mobile-first UI:** responsive navigation and layouts designed from `375px` upward
 
-The current web MVP uses an async repository backed by `localStorage`. This boundary is intentionally cloud-ready so the UI can move to the FastAPI API without duplicating state or rewriting feature components.
+The library MVP currently uses an async repository backed by `localStorage`. Authentication uses the API; verify-email and password recovery pages are still placeholders.
 
 ## Planned AI Learning Features
 
@@ -45,7 +57,7 @@ AI assistance is a roadmap direction; it is not presented as a replacement for r
 ```text
 nerdos/
 ├── nerdos-web/   # React SPA: Vite, TypeScript, Tailwind CSS, shadcn/ui, Plate
-├── nerdos-api/   # FastAPI modular monolith managed with uv
+├── nerdos-api/   # Fastify TypeScript API with Neon Auth and PostgreSQL
 ├── docs/         # Product screenshots and supporting documentation
 └── .github/      # Repository guidance and dependency automation
 ```
@@ -55,17 +67,18 @@ nerdos/
 ```mermaid
 flowchart LR
     Browser["React SPA"] --> Local["Local repository + localStorage"]
-    Browser -. future HTTP/SDK boundary .-> API["FastAPI modular monolith"]
-    API --> Supabase["Supabase: Auth + Postgres + Storage"]
+    Browser --> API["Fastify API"]
+    API --> Neon["Neon Auth + PostgreSQL"]
+    API --> Redis["Redis rate limiting"]
 ```
 
 ### Web
 
-The frontend is organized by product feature rather than a flat component tree. See the [web technical README](nerdos-web/README.md), the [Library feature](nerdos-web/src/features/library), and the [Dashboard feature](nerdos-web/src/features/dashboard).
+The React frontend uses Tailwind CSS, shadcn/ui, and Plate. A shared `ky` client and [endpoint registry](nerdos-web/src/config/api-endpoints.ts) handle API requests. Features are organized independently; see the [web technical README](nerdos-web/README.md), [Library](nerdos-web/src/features/library), and [Dashboard](nerdos-web/src/features/dashboard).
 
 ### API
 
-The backend is the application wiring and integration boundary for Supabase-backed services. See the [API technical README](nerdos-api/README.md), the [FastAPI entrypoint](nerdos-api/src/main.py), and the intended [module boundary](nerdos-api/src/modules).
+The Fastify API integrates Neon Auth and PostgreSQL, with Redis for rate limiting. See the [API technical README](nerdos-api/README.md), [server entrypoint](nerdos-api/src/server.ts), and [modules](nerdos-api/src/modules).
 
 ## Run Locally
 
@@ -78,9 +91,12 @@ Start the web application:
 
 ```bash
 cd nerdos-web
-npm install
-npm run dev
+pnpm install --frozen-lockfile
+cp .env.example .env
+pnpm dev
 ```
+
+Set `VITE_API_BASE_URL` in `nerdos-web/.env` to the API origin; local development defaults to `http://localhost:3000` when it is unset. Production builds require this public URL to be configured.
 
 Start the API foundation:
 
