@@ -98,24 +98,24 @@ git commit -m "feat(landing): add landing content data module and mobile-first h
 **Goal:** Complete the advertising flow of the landing page by showcasing existing MVP services, teasing upcoming AI capabilities with clear `Coming Soon` badges, and closing with a high-contrast signup banner.
 
 ### Tasks
-- [ ] Create `src/features/landing/components/ServicesSection.tsx`:
+- [x] Create `src/features/landing/components/ServicesSection.tsx`:
   - Render from `EXISTING_SERVICES` in `landing-content.ts`.
   - Section header: clear eyebrows/title (*"Everything you need to study smarter"*).
   - Mobile-first grid (`grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-6`).
   - Each `Card` includes a clean Lucide icon (`h-5 w-5 text-primary`), concise title, and 1–2 sentence description—scannable like Quizlet, no walls of text.
-- [ ] Create `src/features/landing/components/ComingSoonSection.tsx`:
+- [x] Create `src/features/landing/components/ComingSoonSection.tsx`:
   - Render from `COMING_SOON_SERVICES` in `landing-content.ts`.
   - Visually distinct container (`bg-muted/40 border-y`) so visitors immediately distinguish upcoming features from live MVP features.
   - Display a prominent `<Badge variant="outline">Coming Soon</Badge>` on both **AI Notes-to-Notecards** and **AI Tutor** cards, with Lucide icons (`Sparkles` / `Bot`) and short, clear descriptions.
-- [ ] Create `src/features/landing/components/CtaSection.tsx`:
+- [x] Create `src/features/landing/components/CtaSection.tsx`:
   - High-contrast closing banner (`rounded-2xl border bg-card p-6 sm:p-10 text-center`) inviting students to join the Nerdos Beta.
   - Full-width primary `Button` on mobile (`w-full sm:w-auto`) linking to `/register`, plus a subtle note (*"Free during Beta • No credit card required"*).
-- [ ] Assemble all sections inside `src/features/landing/pages/LandingPage.tsx` in order:
+- [x] Assemble all sections inside `src/features/landing/pages/LandingPage.tsx` in order:
   1. `HeroSection`
   2. `ServicesSection`
   3. `ComingSoonSection`
   4. `CtaSection`
-- [ ] Mark all Sprint 3 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 3 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash
