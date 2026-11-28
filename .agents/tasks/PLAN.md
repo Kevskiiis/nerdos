@@ -63,9 +63,9 @@ git commit -m "feat(routing): add PublicLayout with beta badge and separate publ
 **Goal:** Centralize all landing page copy into a typed data module and build a high-impact, Quizlet-style mobile-first Hero section featuring an interactive, tappable sample Nerdos flashcard.
 
 ### Tasks
-- [ ] Create directories: `mkdir -p src/features/landing/components src/features/landing/lib src/features/landing/pages`.
-- [ ] Use `shadcn` MCP to verify/install `card` and `separator` components in `src/components/ui/`.
-- [ ] Create `src/features/landing/lib/landing-content.ts`:
+- [x] Create directories: `mkdir -p src/features/landing/components src/features/landing/lib src/features/landing/pages`.
+- [x] Use `shadcn` MCP to verify/install `card` and `separator` components in `src/components/ui/`.
+- [x] Create `src/features/landing/lib/landing-content.ts`:
   - Export strongly typed content objects so copy can be updated without editing JSX:
     - `HERO_CONTENT`: Beta pill text, punchy headline (e.g., *"Master what you study, faster."*), 1–2 sentence subheadline, primary CTA (`Start studying free` -> `/register`), secondary CTA (`Log in` -> `/login`), and a sample flashcard (`front` question + `back` answer + `hint` label).
     - `EXISTING_SERVICES`: Array of 4 MVP services matching actual `nerdos-web` features:
@@ -77,12 +77,12 @@ git commit -m "feat(routing): add PublicLayout with beta badge and separate publ
       1. **AI Notes-to-Notecards** (turn your structured notes into study-ready flashcards automatically)
       2. **AI Tutor** (ask questions, test weak spots, and get guided explanations on your material)
     - `FINAL_CTA_CONTENT`: Closing headline, short beta pitch, and primary signup CTA.
-- [ ] Create `src/features/landing/components/HeroSection.tsx`:
+- [x] Create `src/features/landing/components/HeroSection.tsx`:
   - Mobile-first vertical stack (`px-4 pt-10 pb-12` on mobile -> 2-column split `lg:grid-cols-2 lg:items-center lg:gap-12` on desktop).
   - Display a subtle `Beta` announcement pill, bold responsive headline (`text-4xl sm:text-5xl font-bold tracking-tight`), concise subheadline, and full-width mobile CTA button (`w-full sm:w-auto`) linking to `/register`.
   - Include a lightweight **interactive sample flashcard** (`Card` component with `button` semantics and `aria-pressed` state) that flips between Front (Question) and Back (Answer) on tap/click or `Enter`/`Space`, with a subtle `"Tap card to flip"` cue so visitors immediately experience the product.
-- [ ] Create `src/features/landing/pages/LandingPage.tsx` rendering `HeroSection` and wire it to `/` in `src/app/`.
-- [ ] Mark all Sprint 2 tasks as `[x]` in `PLAN.md`.
+- [x] Create `src/features/landing/pages/LandingPage.tsx` rendering `HeroSection` and wire it to `/` in `src/app/`.
+- [x] Mark all Sprint 2 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash

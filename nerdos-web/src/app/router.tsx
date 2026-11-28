@@ -7,6 +7,8 @@ import { useAuthSession } from "@/app/auth-session"
 import { Outlet, Link } from "react-router-dom"
 import { AppShell } from "@/components/layout/AppShell"
 
+import { LandingPage } from "@/features/landing/pages/LandingPage"
+
 // Page imports
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { DailyReviewPage } from "@/features/dashboard/pages/DailyReviewPage"
@@ -33,7 +35,7 @@ export function Router(): ReactNode {
     <BrowserRouter>
       <Routes>
         <Route element={<PublicLayout />}>
-          <Route index element={<div className="mx-auto max-w-6xl px-4 py-16"><h1 className="text-4xl font-bold">Welcome to Nerdos</h1><p className="mt-4 text-muted-foreground">A better place to study.</p></div>} />
+          <Route index element={<LandingPage />} />
         </Route>
         <Route element={<GuestOnlyRoute />}>
           {["login", "register", "verify-email", "forgot-password", "reset-password"].map((path) => <Route key={path} path={path} element={<AuthPlaceholder />} />)}
