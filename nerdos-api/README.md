@@ -24,6 +24,8 @@ cp .env.example .env
 
 Edit `.env` with your frontend origin, PostgreSQL and Redis URLs, Neon Auth URL, and cookie secret. The example values are placeholders. The application reads environment variables from the process; it does **not** automatically load `.env`. For a shell-compatible `.env` file, export its values before starting the server:
 
+When sourcing `.env` in Bash, wrap connection strings and secrets containing shell characters such as `&` in single quotes, for example `DATABASE_URL='postgresql://user:password@host/db?sslmode=require&channel_binding=require'`.
+
 ```bash
 set -a
 . ./.env
@@ -37,6 +39,19 @@ The development server listens at `http://localhost:3000` by default. Check it w
 curl http://localhost:3000/health/live
 curl http://localhost:3000/health/ready
 ```
+
+### Local Redis with Docker Compose
+
+The development compose file runs Redis with TLS and generated development-only credentials, bound to localhost on port `6380`. It does not replace Neon Auth or PostgreSQL. Install Docker with Compose and OpenSSL, then from the repository root run:
+
+```bash
+make services-setup
+make services-up
+```
+
+Set `REDIS_URL=rediss://nerdos:local@127.0.0.1:6380` in `nerdos-api/.env` as a local-service selector. Keep your existing Neon database URL, Auth URL, and cookie secret there. From the repository root, run `make dev-backend`. The Makefile replaces the placeholder password with the generated value and loads the local CA certificate.
+
+Generated credentials are stored in `dev/redis/.env` (mode 600); the ACL and TLS files are ignored by Git. The Redis container must read its ACL and TLS key, so these local-only container files are readable by local users. Never use the credentials or certificates outside local development. Stop the container with `make services-down`; its named volume retains data. Inspect logs with `make services-logs`.
 
 Liveness works without dependency connections. Readiness requires working PostgreSQL and Redis connections and returns `503` when either is unavailable or a check times out. Interactive API documentation is available at [http://localhost:3000/docs/](http://localhost:3000/docs/) outside production; the OpenAPI document is at `/docs/json`.
 

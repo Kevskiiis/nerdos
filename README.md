@@ -86,9 +86,13 @@ Start the API foundation:
 
 ```bash
 cd nerdos-api
-uv sync
-uv run fastapi dev src/main.py
+pnpm install --frozen-lockfile
+cp .env.example .env
 ```
+
+Configure `.env` as described in the API guide, then run `make dev-backend` from the repository root. The root Makefile also provides `make dev-frontend` and `make dev` to run the frontend and backend together. For local Redis, run `make services-up` first; see the API guide for the connection settings.
+
+Use `make build` to build both apps, `make build frontend` or `make build backend` to build one, and `make help` to list the remaining commands. The backend development command loads `nerdos-api/.env` if present and automatically loads the generated local Redis credentials and certificate when the local Compose Redis URL is configured. `make dev` stops both servers when interrupted; it does not start or stop the Compose services.
 
 For prerequisites, environment-variable conventions, architecture rules, and troubleshooting, use the project-specific guides:
 
