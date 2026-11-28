@@ -2,8 +2,8 @@ import type { ReactNode } from "react"
 import type { Value } from "platejs"
 import { Plate, PlateContent, usePlateEditor } from "platejs/react"
 import type { PlateValue } from "../../types"
-import { editorPlugins } from "./editor-plugins"
-import { SlashMenu } from "./slash-menu"
+import { editorPlugins } from "@/components/editor/editor-plugins"
+import { SlashMenu } from "@/components/editor/slash-menu"
 
 interface NoteEditorProps {
   /** Initial document. The editor owns the live value after mount. */

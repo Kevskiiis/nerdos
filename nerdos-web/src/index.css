@@ -5,6 +5,29 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@media (prefers-reduced-motion: no-preference) {
+  .motion-page { animation: nerdos-page-in 240ms ease-out; }
+  .motion-feedback { animation: nerdos-feedback-in 180ms ease-out; }
+  .motion-menu { animation: nerdos-fade-in 150ms ease-out both; }
+  .motion-page [data-slot="button"],
+  .motion-page a { transition-duration: 200ms; }
+}
+
+@keyframes nerdos-page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nerdos-feedback-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nerdos-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @utility pb-safe {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }

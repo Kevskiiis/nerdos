@@ -45,7 +45,7 @@ import { common, createLowlight } from "lowlight"
 import { KEYS, PathApi, TrailingBlockPlugin, type AnyPluginConfig, type SlateEditor } from "platejs"
 import { ParagraphPlugin } from "platejs/react"
 import { CodeBlockElement, CodeLineElement, CodeSyntaxLeaf } from "./nodes/code-block-node"
-import { BlockList } from "./nodes/list-node"
+import { BlockList } from "@/components/editor/list-node"
 import { EquationElement, InlineEquationElement } from "./nodes/math-nodes"
 import {
   BlockquoteElement,
@@ -65,7 +65,7 @@ import {
   SubscriptLeaf,
   SuperscriptLeaf,
   UnderlineLeaf,
-} from "./nodes/text-nodes"
+} from "@/components/editor/text-nodes"
 import {
   TableCellElement,
   TableCellHeaderElement,

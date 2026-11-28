@@ -49,7 +49,7 @@ export function SlashMenu(): ReactNode {
   const [linkMode, setLinkMode] = useState(false)
   const [query, setQuery] = useState<string | null>(null)
   const [active, setActive] = useState("")
-  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null)
+  const [anchor, setAnchor] = useState<{ top: number; left: number; maxHeight: number; above: boolean } | null>(null)
   const [linkText, setLinkText] = useState("")
   const [invalid, setInvalid] = useState(false)
 
@@ -122,14 +122,18 @@ export function SlashMenu(): ReactNode {
     else setQuery(next)
   }, [editor, version, open, linkMode, closeMenu])
 
-  // Position the menu under the caret once the "/" is in the DOM.
+  // Prefer the space below the caret; flip above when it offers more room.
   useEffect(() => {
     if (!open) return
     const frame = requestAnimationFrame(() => {
       const selection = window.getSelection()
       if (!selection || selection.rangeCount === 0) return
       const rect = selection.getRangeAt(0).getBoundingClientRect()
-      setAnchor({ top: rect.bottom + 6, left: rect.left })
+      const below = Math.max(0, window.innerHeight - rect.bottom - 14)
+      const above = Math.max(0, rect.top - 14)
+      const placeAbove = below < 296 && above > below
+      const maxHeight = Math.max(1, placeAbove ? above : below)
+      setAnchor({ top: placeAbove ? rect.top - 6 : rect.bottom + 6, left: Math.max(8, Math.min(rect.left, window.innerWidth - 296)), maxHeight, above: placeAbove })
     })
     return () => cancelAnimationFrame(frame)
   }, [open])
@@ -142,6 +146,22 @@ export function SlashMenu(): ReactNode {
     }
     window.addEventListener("mousedown", onMouseDown, true)
     return () => window.removeEventListener("mousedown", onMouseDown, true)
+  }, [open, closeMenu])
+
+  // A fixed-position menu cannot follow its anchor while the page or editor scrolls.
+  // Keep scrolling inside the command list usable without dismissing the menu.
+  useEffect(() => {
+    if (!open) return
+    const onScroll = (event: Event) => {
+      if (event.target instanceof Node && menuRef.current?.contains(event.target)) return
+      closeMenu()
+    }
+    window.addEventListener("scroll", onScroll, true)
+    window.addEventListener("resize", closeMenu)
+    return () => {
+      window.removeEventListener("scroll", onScroll, true)
+      window.removeEventListener("resize", closeMenu)
+    }
   }, [open, closeMenu])
 
   // Capture phase runs before Slate's handlers, so keys the menu consumes never reach the editor.
@@ -196,8 +216,8 @@ export function SlashMenu(): ReactNode {
   return (
     <div
       ref={menuRef}
-      style={{ top: anchor.top, left: anchor.left }}
-      className="fixed z-50 w-72 rounded-2xl border border-border bg-popover p-1 text-popover-foreground shadow-md"
+      style={{ top: anchor.top, left: anchor.left, maxHeight: anchor.maxHeight, transform: anchor.above ? "translateY(-100%)" : undefined }}
+      className="motion-menu fixed z-50 w-[min(18rem,calc(100vw-1rem))] overflow-y-auto rounded-2xl border border-border bg-popover p-1 text-popover-foreground shadow-md"
     >
       {linkMode ? (
         <div className="px-2 py-2">
@@ -229,7 +249,7 @@ export function SlashMenu(): ReactNode {
       ) : (
         <div onMouseDown={(event) => event.preventDefault()}>
           <Command shouldFilter={false} loop value={activeId} onValueChange={setActive}>
-            <CommandList>
+            <CommandList style={{ maxHeight: Math.min(288, Math.max(1, anchor.maxHeight - 10)) }}>
               {SLASH_GROUPS.map((group) => {
                 const groupCommands = commands.filter((command) => command.group === group)
                 if (groupCommands.length === 0) return null

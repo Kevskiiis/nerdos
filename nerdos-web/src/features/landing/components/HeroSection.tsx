@@ -26,7 +26,7 @@ export function HeroSection() {
         <Card className="min-h-64 p-0">
           <button type="button" aria-pressed={flipped} onClick={() => setFlipped(!flipped)} className="flex min-h-64 w-full flex-1 flex-col items-center justify-between gap-6 rounded-4xl p-7 text-center outline-none focus-visible:ring-4 focus-visible:ring-ring/50">
             <span className="self-start text-xs font-semibold uppercase tracking-wider text-muted-foreground">{flipped ? "Answer" : "Question"}</span>
-            <span className="max-w-sm text-xl font-semibold leading-snug sm:text-2xl">{flipped ? flashcard.back : flashcard.front}</span>
+            <span key={flipped ? "back" : "front"} className="motion-feedback max-w-sm text-xl font-semibold leading-snug sm:text-2xl">{flipped ? flashcard.back : flashcard.front}</span>
             <span className="flex items-center gap-2 text-sm text-muted-foreground"><RotateCw className="size-4" />{flashcard.hint}</span>
           </button>
         </Card>

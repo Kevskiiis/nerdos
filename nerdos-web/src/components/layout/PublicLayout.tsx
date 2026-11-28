@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button"
 /** Provides public navigation and a footer for marketing pages. */
 export function PublicLayout() {
   const session = useAuthSession()
-  return <div className="flex min-h-screen flex-col bg-background text-foreground">
+  return <div className="flex min-h-screen w-full min-w-0 flex-col bg-background text-foreground">
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <nav aria-label="Main navigation" className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2">
         <Link to="/" className="flex min-h-11 items-center gap-2 font-bold">Nerdos <Badge variant="secondary">Beta</Badge></Link>
