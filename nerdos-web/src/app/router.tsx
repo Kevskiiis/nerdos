@@ -2,6 +2,9 @@ import type { ReactNode } from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { PublicLayout } from "@/components/layout/PublicLayout"
+import { useAuthSession } from "@/app/auth-session"
+import { Outlet, Link } from "react-router-dom"
 import { AppShell } from "@/components/layout/AppShell"
 
 // Page imports
@@ -13,12 +16,28 @@ import { LibraryPage } from "@/features/library/pages/LibraryPage"
 import { NotePage } from "@/features/library/pages/NotePage"
 import { SettingsPage } from "@/features/settings/pages/SettingsPage"
 
+function GuestOnlyRoute() {
+  const session = useAuthSession()
+  if (session.isPending) return <p className="p-6">Checking your session…</p>
+  if (session.isError) return <p className="p-6" role="alert">Unable to check your session. Please try again later.</p>
+  return session.data ? <Navigate to="/dashboard" replace /> : <Outlet />
+}
+
+function AuthPlaceholder() {
+  return <main className="mx-auto max-w-xl p-6"><Link to="/" className="inline-flex min-h-11 items-center underline">Back to Nerdos</Link><h1 className="text-2xl font-bold">Authentication is coming soon</h1></main>
+}
+
+/** Defines public, guest-only, and authenticated application routes. */
 export function Router(): ReactNode {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public routes - TODO: Add landing, login, signup here */}
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route element={<PublicLayout />}>
+          <Route index element={<div className="mx-auto max-w-6xl px-4 py-16"><h1 className="text-4xl font-bold">Welcome to Nerdos</h1><p className="mt-4 text-muted-foreground">A better place to study.</p></div>} />
+        </Route>
+        <Route element={<GuestOnlyRoute />}>
+          {["login", "register", "verify-email", "forgot-password", "reset-password"].map((path) => <Route key={path} path={path} element={<AuthPlaceholder />} />)}
+        </Route>
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>

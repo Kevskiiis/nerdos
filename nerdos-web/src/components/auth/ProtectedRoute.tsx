@@ -1,16 +1,12 @@
 import type { ReactNode } from "react"
-import { Outlet } from "react-router-dom"
+import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { useAuthSession } from "@/app/auth-session"
 
-/**
- * Pass-through route guard for protected routes.
- * Currently allows all access; will integrate session checks when <AuthProvider> is ready.
- *
- * TODO: Implement session validation:
- * - Check if user is authenticated
- * - Show loading state while checking
- * - Redirect to /login if unauthenticated
- * - Preserve intended destination for post-login redirect
- */
+/** Allows authenticated visitors through and redirects signed-out visitors to login. */
 export function ProtectedRoute(): ReactNode {
-  return <Outlet />
+  const session = useAuthSession()
+  const location = useLocation()
+  if (session.isPending) return <p className="p-6">Checking your session…</p>
+  if (session.isError) return <p className="p-6" role="alert">Unable to check your session. Please try again later.</p>
+  return session.data ? <Outlet /> : <Navigate to="/login" state={{ from: location }} replace />
 }
