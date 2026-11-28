@@ -36,3 +36,6 @@ __pycache__
 .env.*
 !.env.example
 !**/.env.example
+
+# Locally generated Redis TLS material
+nerdos-api/dev/redis/certs/
