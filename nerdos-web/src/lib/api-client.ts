@@ -65,7 +65,7 @@ export async function parseApiError(error: unknown): Promise<ApiError> {
   if (error instanceof ApiError) return error
 
   if (error instanceof HTTPError) {
-    const payload = (await error.response.clone().json().catch(() => undefined)) as ApiErrorPayload | undefined
+    const payload = asRecord(error.data) as ApiErrorPayload | undefined
     const fallback = safeNetworkMessage(error)
     const message = typeof payload?.detail === "string"
       ? payload.detail
