@@ -1,4 +1,4 @@
-/** Central registry of backend route paths; paths omit the leading slash for ky's prefixUrl. */
+/** Central registry of backend route paths; paths omit the leading slash for ky's prefix handling. */
 export const API_ENDPOINTS = Object.freeze({
   auth: Object.freeze({
     register: "api/v1/auth/register",

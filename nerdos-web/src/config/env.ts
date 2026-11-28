@@ -11,7 +11,14 @@ const envSchema = z.object({
     .transform((value) => value.replace(/\/+$/, "")),
 })
 
-const parsedEnv = envSchema.safeParse(import.meta.env)
+// Keep the frontend runnable for local UI work when developers have not copied
+// .env.example yet. Deployed builds still have to provide their API origin.
+const sourceEnv = {
+  ...import.meta.env,
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "http://localhost:3000" : undefined),
+}
+
+const parsedEnv = envSchema.safeParse(sourceEnv)
 
 if (!parsedEnv.success) {
   const issues = parsedEnv.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("\n")

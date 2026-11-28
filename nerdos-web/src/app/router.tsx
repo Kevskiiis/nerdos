@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { SessionLoading } from "@/components/auth/SessionLoading"
 import { PublicLayout } from "@/components/layout/PublicLayout"
 import { useAuthSession } from "@/app/auth-session"
 import { Outlet, Link } from "react-router-dom"
@@ -17,11 +18,12 @@ import { FolderPage } from "@/features/library/pages/FolderPage"
 import { LibraryPage } from "@/features/library/pages/LibraryPage"
 import { NotePage } from "@/features/library/pages/NotePage"
 import { SettingsPage } from "@/features/settings/pages/SettingsPage"
+import { LoginPage } from "@/features/auth/pages/LoginPage"
+import { SignupPage } from "@/features/auth/pages/SignupPage"
 
 function GuestOnlyRoute() {
   const session = useAuthSession()
-  if (session.isPending) return <p className="p-6">Checking your session…</p>
-  if (session.isError) return <p className="p-6" role="alert">Unable to check your session. Please try again later.</p>
+  if (session.isPending) return <SessionLoading />
   return session.data ? <Navigate to="/dashboard" replace /> : <Outlet />
 }
 
@@ -38,7 +40,9 @@ export function Router(): ReactNode {
           <Route index element={<LandingPage />} />
         </Route>
         <Route element={<GuestOnlyRoute />}>
-          {["login", "register", "verify-email", "forgot-password", "reset-password"].map((path) => <Route key={path} path={path} element={<AuthPlaceholder />} />)}
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<SignupPage />} />
+          {["verify-email", "forgot-password", "reset-password"].map((path) => <Route key={path} path={path} element={<AuthPlaceholder />} />)}
         </Route>
 
         {/* Protected routes */}

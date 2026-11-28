@@ -10,7 +10,7 @@ export function useAuthSession() {
     retry: false,
     queryFn: async () => {
       try {
-        await apiClient.get(API_ENDPOINTS.auth.me)
+        await apiClient.get(API_ENDPOINTS.auth.me, { timeout: 2_000 })
         return true
       } catch (error) {
         if (error instanceof HTTPError && error.response.status === 401) return false
