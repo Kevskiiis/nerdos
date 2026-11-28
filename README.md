@@ -20,9 +20,9 @@ A unified, mobile-first study workspace that combines rich-text note-taking with
 
 | Dashboard | Unified Library |
 | :---: | :---: |
-| ![Nerdos Dashboard](docs/images/dashboard_mvp.png) | ![Unified Study Library](docs/images/library_mvp.png) |
+| ![Nerdos Dashboard](docs/images/dashboard_light_mvp.png) | ![Unified Study Library](docs/images/library_light_mvp.png) |
 | **Plate Note Canvas** | **Notecard Set Manager** |
-| ![Plate-powered note page](docs/images/notes_page_mvp.png) | ![Spaced-repetition card set](docs/images/card_set_mvp.png) |
+| ![Plate-powered note page](docs/images/notes_page_light_mvp.png) | ![Spaced-repetition card set](docs/images/card_set_light_mvp.png) |
 
 ## Why Nerdos
 
