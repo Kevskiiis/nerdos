@@ -1,6 +1,7 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
+import "@/config/env"
 import "./index.css"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { Providers } from "@/app/providers.tsx"

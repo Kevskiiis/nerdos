@@ -1,4 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
+import { HTTPError } from "ky"
+import { API_ENDPOINTS } from "@/config/api-endpoints"
+import { apiClient, parseApiError } from "@/lib/api-client"
 
 /** Loads the current session without treating a service outage as a signed-out state. */
 export function useAuthSession() {
@@ -6,10 +9,13 @@ export function useAuthSession() {
     queryKey: ["auth", "session"],
     retry: false,
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/api/v1/auth/me`, { credentials: "include" })
-      if (response.status === 401) return false
-      if (!response.ok) throw new Error("Unable to check your session.")
-      return true
+      try {
+        await apiClient.get(API_ENDPOINTS.auth.me)
+        return true
+      } catch (error) {
+        if (error instanceof HTTPError && error.response.status === 401) return false
+        throw await parseApiError(error)
+      }
     },
   })
 }
