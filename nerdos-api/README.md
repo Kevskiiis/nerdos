@@ -22,16 +22,16 @@ pnpm install --frozen-lockfile
 cp .env.example .env
 ```
 
-Edit `.env` with your frontend origin, PostgreSQL and Redis URLs, Neon Auth URL, and cookie secret. The example values are placeholders. The application reads environment variables from the process; it does **not** automatically load `.env`. For a shell-compatible `.env` file, export its values before starting the server:
-
-When sourcing `.env` in Bash, wrap connection strings and secrets containing shell characters such as `&` in single quotes, for example `DATABASE_URL='postgresql://user:password@host/db?sslmode=require&channel_binding=require'`.
+Edit `nerdos-api/.env` with your frontend origin, PostgreSQL URL, Neon Auth URL, and cookie secret. The example values are placeholders; use a non-production Neon project or branch for local experiments. Generate a cookie secret with `openssl rand -base64 32`. Set up local Redis as described below, then start the API from the repository root:
 
 ```bash
-set -a
-. ./.env
-set +a
-pnpm dev
+make services-up
+make dev-backend
 ```
+
+`make dev-backend` loads `nerdos-api/.env`. Bash reads this file, so quote values containing shell characters such as `&`: `DATABASE_URL='postgresql://user:password@host/db?sslmode=require&channel_binding=require'`. Keep `.env` private and out of version control.
+
+To run `pnpm dev` directly instead, export your environment first. The example local Redis URL is a **selector** interpreted by the Makefile, not an actual password; direct `pnpm dev` requires the generated password and CA certificate in `REDIS_URL` and `REDIS_CA_CERT`. For a separately hosted Redis service, set its real URL and any necessary CA certificate in your environment.
 
 The development server listens at `http://localhost:3000` by default. Check it with:
 
@@ -68,7 +68,7 @@ Liveness works without dependency connections. Readiness requires working Postgr
 | `REDIS_URL` | Required | TLS Redis URL (`rediss://`) with a username and password. |
 | `REDIS_CA_CERT` | None | Optional PEM CA certificate for Redis; represent line breaks as `\n`. |
 | `NEON_AUTH_BASE_URL` | Required | Neon Auth service URL. |
-| `NEON_AUTH_COOKIE_SECRET` | Required | Secret used to sign session cookies; at least 32 characters. |
+| `NEON_AUTH_COOKIE_SECRET` | Required | Secret used by the SDK to sign cached session-data cookies; at least 32 characters. |
 
 Configuration is validated at startup. Set secrets in the environment or a local, untracked `.env` file; `.env.example` contains placeholders only.
 
@@ -88,7 +88,7 @@ Run these from `nerdos-api/`:
 | `pnpm test:unit` | Run unit tests. |
 | `pnpm test:integration` | Run integration tests. |
 
-Tests use Vitest. HTTP integration tests use Fastify injection and mocked PostgreSQL, Redis, and authentication clients; they do not need external services or open ports. Tests under `tests/shared/` mirror the shared source directories.
+Tests use Vitest. HTTP integration tests use Fastify injection and mocked PostgreSQL, Redis, and authentication clients; they do not need external services or open ports. The root Makefile also provides `make dev`, `make dev-backend`, `make dev-frontend`, `make build`, `make test`, `make typecheck`, and `make help`.
 
 ## HTTP behavior
 
@@ -114,7 +114,25 @@ Authentication routes are mounted under `/api/v1/auth`:
 | `POST /change-password` | Change the password; requires a session. |
 | `POST /logout-all` | End all sessions; requires a session. |
 
-Use the interactive documentation for request and response schemas. Authentication routes have rate limits; browser clients must send credentials to use session cookies.
+Use the interactive documentation for request and response schemas. Browser clients must send credentials to use session cookies. The guard checks sessions with Neon instead of relying on the SDK's session-data cache. Cookies are forwarded with `SameSite=None; Secure; HttpOnly`, so browser testing requires a suitable secure context.
+
+### Try registration
+
+This request creates a real user in the configured Neon Auth project. Use an email address you control and a non-production project or branch:
+
+```bash
+curl -i -X POST http://localhost:3000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Test User","email":"test@example.com","password":"a-long-test-password"}'
+```
+
+Registration accepts a `name`, email, and password. New passwords must be 12–128 characters, contain printable ASCII only, and not be blank. Verification and reset codes must be six digits. Existing passwords can be shorter when signing in. The API requests a verification code after signup; configure Neon Auth for email signup and code verification. Verification requires Neon to return a session cookie for automatic sign-in.
+
+Registration and sending its verification code are separate operations. An error on the second step can occur after the account has already been created; check Neon Auth before retrying. Password reset similarly changes the password before signing in and revoking sessions, so a later failure can leave the password changed.
+
+### Rate limiting
+
+The global limit is 100 requests per minute per IP. Registration, resend verification, and forgot password share a 10-per-10-minute IP tier; login, email verification, and password reset share a 10-per-minute IP tier. Password change and logout-all also share a 10-per-10-minute user tier after authentication. Health probes are exempt. Exceeding a limit returns `429 RATE_LIMITED`; Redis failures return a retryable `503 SERVICE_UNAVAILABLE` rather than allowing requests through.
 
 Requests may supply an `x-trace-id` header; otherwise the API generates one. Responses include `x-trace-id` and `x-app-version`. Request logs include the trace ID, and configured sensitive fields are redacted. Security headers and credentialed CORS are enabled. The service sheds requests under high event-loop delay or heap usage; liveness remains available during load shedding.
 
@@ -132,7 +150,7 @@ Errors handled by the shared error handler use this JSON shape:
 }
 ```
 
-Some errors also include `meta_data`, such as field errors for validation failures. Unexpected server errors are logged and returned with a sanitized detail. The readiness probe uses its own `{ "status": "degraded" }` response when a dependency check fails.
+Validation failures return `422 VALIDATION_ERROR`; friendly field-specific messages appear in `meta_data.field_errors` with paths such as `/password`. Unexpected server errors are logged and returned with a sanitized detail. The readiness probe uses its own `{ "status": "degraded" }` response when a dependency check fails.
 
 ## Project layout
 
@@ -147,11 +165,12 @@ src/
     database/               # PostgreSQL pool
     docs/                   # OpenAPI and Swagger UI
     exceptions/             # Error contract and handlers
-    http/                   # Security and trace IDs
+    http/                   # Security, session contract, rate limits, and trace IDs
     logging/                # Pino configuration
     observability/          # Health probes and load shedding
     types/                  # Fastify type augmentations
 tests/                      # Unit and HTTP integration tests
+dev/                        # Local Compose services and Redis configuration
 ```
 
 Shared infrastructure must not depend on domain modules. The app factory accepts injected PostgreSQL, Redis, and authentication clients for tests and closes the database and Redis clients during shutdown.
@@ -171,3 +190,10 @@ docker run --rm -p 3000:3000 --env-file .env nerdos-api:local
 ```
 
 The image runs as a non-root user and probes `/health/live` on port 3000. Ensure the database and Redis hostnames are reachable **from the container**; `localhost` inside the container refers to the container itself. The Dockerfile sets `NODE_ENV=production`, but values supplied with `--env-file` can override it, so set `NODE_ENV=production` in the file for a production-style run. The image health check assumes port 3000.
+
+## Troubleshooting
+
+- **Missing `DATABASE_URL` at startup:** Check `nerdos-api/.env`, quote URLs containing `&`, and restart with `make dev-backend`.
+- **`503 SERVICE_UNAVAILABLE` from the rate limiter:** Run `make services-up`, check `make services-logs`, and confirm the local Redis selector is configured. `make dev-backend` loads the generated credentials and CA; direct `pnpm dev` does not.
+- **`/health/ready` returns 503:** Either PostgreSQL or Redis is unavailable or timed out. `/health/live` checks only the process.
+- **Registration returns an authentication error:** Confirm the Auth URL, allowed origin, email signup, and verification-code settings in Neon. A failed verification-email request may follow a successful account creation, so check the Neon user list before retrying. Never share credentials, cookies, or `.env` when seeking help.
