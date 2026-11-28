@@ -7,7 +7,7 @@ const icons = [BookOpenText, Boxes, Brain, LayoutDashboard]
 /** Shows the study tools currently available in Nerdos. */
 export function ServicesSection() {
   return <section aria-labelledby="services-title" className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-    <p className="text-sm font-semibold text-primary">YOUR STUDY WORKSPACE</p>
+    <p className="text-sm font-semibold text-foreground">YOUR STUDY WORKSPACE</p>
     <h2 id="services-title" className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">Everything you need to study smarter</h2>
     <p className="mt-4 max-w-2xl text-muted-foreground">From your first note to your next review, keep your study routine in one place.</p>
     <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-6">

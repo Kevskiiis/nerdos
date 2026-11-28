@@ -131,24 +131,24 @@ git commit -m "feat(landing): add existing services showcase, coming soon AI sec
 **Goal:** Use `Playwright` MCP to inspect the live rendered landing page across mobile, tablet, and desktop viewports, verify route isolation and interactive states, and fix any layout, spacing, or accessibility defects.
 
 ### Tasks
-- [ ] Start the local `nerdos-web` dev server and open `/` using **Playwright MCP**.
-- [ ] **Mobile-First Audit (`375×812`):**
+- [x] Start the local `nerdos-web` dev server and open `/` using locally installed **Playwright** (MCP tools were unavailable in the running session).
+- [x] **Mobile-First Audit (`375×812`):**
   - Confirm **zero horizontal overflow** (`document.documentElement.scrollWidth <= window.innerWidth`).
   - Verify the sticky header (`Nerdos` + `Beta` badge + `Log in` / `Get started`) stays on a single clean row without wrapping or clipping.
   - Verify the Hero headline, primary CTA, and interactive sample flashcard fit cleanly above/near the fold with comfortable padding and `>= 44px` tap targets.
   - Click/tap the sample flashcard and confirm it flips to reveal the answer and flips back on a second tap.
-- [ ] **Tablet (`768×1024`) & Desktop (`1440×900`) Audit:**
+- [x] **Tablet (`768×1024`) & Desktop (`1440×900`) Audit:**
   - Verify `HeroSection` transitions cleanly to a 2-column layout on desktop.
   - Verify `ServicesSection` and `ComingSoonSection` align cleanly into 2-column grids with balanced card heights.
-- [ ] **Navigation & Route Separation Check:**
+- [x] **Navigation & Route Separation Check:**
   - Click `Get started` -> confirm navigation to `/register`.
   - Click `Log in` -> confirm navigation to `/login`.
   - Navigate to `/dashboard` while unauthenticated -> confirm redirect to `/login`.
-- [ ] **Accessibility & Polish:**
+- [x] **Accessibility & Polish:**
   - Verify heading hierarchy (single `<h1>` in `HeroSection`, `<h2>` for section headings, `<h3>` for card titles).
   - Verify keyboard navigation (`Tab` through navbar links, CTA buttons, and `Enter`/`Space` to flip the sample flashcard) with visible focus rings.
   - Apply any spacing, contrast, or responsive fixes discovered during the Playwright audit.
-- [ ] Mark all Sprint 4 tasks as `[x]` in `PLAN.md`.
+- [x] Mark all Sprint 4 tasks as `[x]` in `PLAN.md`.
 
 ### Verification & Local Commit
 ```bash

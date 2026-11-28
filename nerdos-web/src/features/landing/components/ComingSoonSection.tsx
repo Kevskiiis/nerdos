@@ -9,7 +9,7 @@ const icons = [Sparkles, Bot]
 export function ComingSoonSection() {
   return <section aria-labelledby="coming-soon-title" className="border-y bg-muted/40">
     <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-      <p className="text-sm font-semibold text-primary">WHAT'S NEXT</p>
+      <p className="text-sm font-semibold text-foreground">WHAT'S NEXT</p>
       <h2 id="coming-soon-title" className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">More ways to learn, on the way</h2>
       <p className="mt-4 max-w-2xl text-muted-foreground">We're exploring AI tools to help you turn your materials into meaningful practice.</p>
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-6">
